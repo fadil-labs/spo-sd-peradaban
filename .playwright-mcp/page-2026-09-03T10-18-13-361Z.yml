@@ -1,0 +1,4 @@
+- generic [active] [ref=e1]:
+  - paragraph [ref=e4]: Gagal memuat data bukti pembayaran.
+  - button "Open Next.js Dev Tools" [ref=e10] [cursor=pointer]
+  - alert [ref=e14]

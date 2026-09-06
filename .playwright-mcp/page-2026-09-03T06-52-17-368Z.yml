@@ -1,0 +1,32 @@
+- generic [active] [ref=f4e1]:
+  - generic [ref=f4e3]:
+    - generic [ref=f4e4]:
+      - heading "Dashboard Admin" [level=1] [ref=f4e5]
+      - paragraph [ref=f4e6]: Ringkasan operasional sekolah
+    - paragraph [ref=f4e8]: Gagal memuat ringkasan dashboard.
+    - generic [ref=f4e9]:
+      - link [ref=f4e10] [cursor=pointer]:
+        - /url: /dashboard/admin/student-bills
+        - heading "Tagihan Siswa" [level=2] [ref=f4e11]
+        - paragraph [ref=f4e12]: Kelola tagihan dan pembayaran siswa
+      - link [ref=f4e13] [cursor=pointer]:
+        - /url: /dashboard/admin/financial-reports
+        - heading "Laporan Keuangan" [level=2] [ref=f4e14]
+        - paragraph [ref=f4e15]: Rekonsiliasi dan laporan
+      - link [ref=f4e16] [cursor=pointer]:
+        - /url: /dashboard/admin/payment-proofs
+        - heading "Bukti Pembayaran" [level=2] [ref=f4e17]
+        - paragraph [ref=f4e18]: Verifikasi bukti pembayaran
+      - link [ref=f4e19] [cursor=pointer]:
+        - /url: /dashboard/admin/payments
+        - heading "Monitoring Pembayaran" [level=2] [ref=f4e20]
+        - paragraph [ref=f4e21]: Pantau semua transaksi pembayaran
+      - link [ref=f4e22] [cursor=pointer]:
+        - /url: /dashboard/admin/financial-audit-logs
+        - heading "Log Keuangan" [level=2] [ref=f4e23]
+        - paragraph [ref=f4e24]: Audit trail keuangan
+      - link [ref=f4e25] [cursor=pointer]:
+        - /url: /dashboard/admin/notifications
+        - heading "Notifikasi" [level=2] [ref=f4e26]
+        - paragraph [ref=f4e27]: Pusat notifikasi
+  - button "Open Next.js Dev Tools" [ref=f4e33] [cursor=pointer]

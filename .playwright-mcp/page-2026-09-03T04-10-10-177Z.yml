@@ -1,0 +1,43 @@
+- generic [active] [ref=f3e1]:
+  - generic [ref=f3e2]:
+    - generic [ref=f3e3]:
+      - heading "Profil Saya" [level=1] [ref=f3e4]
+      - paragraph [ref=f3e5]: Kelola informasi akun dan keamanan Anda
+    - generic [ref=f3e6]:
+      - generic [ref=f3e7]:
+        - heading "Informasi Akun" [level=2] [ref=f3e8]
+        - generic [ref=f3e9]:
+          - generic [ref=f3e10]:
+            - generic [ref=f3e11]: Nama Lengkap
+            - textbox "Nama Lengkap" [ref=f3e12]: Bendahara SD Peradaban
+          - generic [ref=f3e13]:
+            - generic [ref=f3e14]: Email
+            - textbox "Email" [ref=f3e15]: bendahara@sdperadaban.sch.id
+            - paragraph [ref=f3e16]: Dikelola oleh sistem autentikasi
+          - generic [ref=f3e17]:
+            - generic [ref=f3e18]: Sekolah
+            - textbox "Sekolah" [ref=f3e19]: 11111111-1111-1111-1111-111111111111
+            - paragraph [ref=f3e20]: Ditentukan oleh keanggotaan tenant
+          - generic [ref=f3e21]:
+            - generic [ref=f3e22]: Role
+            - textbox "Role" [ref=f3e23]: Bendahara
+            - paragraph [ref=f3e24]: Dikontrol oleh sistem
+          - generic [ref=f3e25]:
+            - generic [ref=f3e26]: Nomor Telepon
+            - textbox "Nomor Telepon" [ref=f3e27]:
+              - /placeholder: Opsional
+          - button "Simpan Perubahan" [ref=f3e28]
+      - generic [ref=f3e29]:
+        - heading "Ubah Password" [level=2] [ref=f3e30]
+        - generic [ref=f3e31]:
+          - generic [ref=f3e32]:
+            - generic [ref=f3e33]: Password Baru
+            - textbox "Password Baru" [ref=f3e34]:
+              - /placeholder: Minimal 8 karakter
+          - generic [ref=f3e35]:
+            - generic [ref=f3e36]: Konfirmasi Password
+            - textbox "Konfirmasi Password" [ref=f3e37]:
+              - /placeholder: Ulangi password baru
+          - button "Simpan Password Baru" [ref=f3e38]
+      - button "Keluar" [ref=f3e40]
+  - button "Open Next.js Dev Tools" [ref=f3e46] [cursor=pointer]

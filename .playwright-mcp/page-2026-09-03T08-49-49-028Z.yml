@@ -1,0 +1,140 @@
+- generic [active] [ref=f53e1]:
+  - generic [ref=f53e2]:
+    - generic [ref=f53e3]:
+      - generic [ref=f53e4]:
+        - heading "Laporan Keuangan" [level=2] [ref=f53e5]
+        - paragraph [ref=f53e6]: Rekonsiliasi tagihan, pembayaran, dan bukti pembayaran
+      - button "Export CSV" [ref=f53e7]
+    - generic [ref=f53e11]:
+      - generic [ref=f53e12]:
+        - paragraph [ref=f53e13]: Total Tagihan
+        - paragraph [ref=f53e14]: Rp 200.000
+        - paragraph [ref=f53e15]: 2 tagihan
+      - generic [ref=f53e16]:
+        - paragraph [ref=f53e17]: Total Terbayar
+        - paragraph [ref=f53e18]: Rp 100.000
+        - paragraph [ref=f53e19]: Termasuk pending
+      - generic [ref=f53e20]:
+        - paragraph [ref=f53e21]: Pembayaran Pending
+        - paragraph [ref=f53e22]: Rp 0
+        - paragraph [ref=f53e23]: 0 transaksi
+      - generic [ref=f53e24]:
+        - paragraph [ref=f53e25]: Outstanding
+        - paragraph [ref=f53e26]: Rp 100.000
+        - paragraph [ref=f53e27]: Sisa tagihan
+      - generic [ref=f53e28]:
+        - paragraph [ref=f53e29]: Tagihan Lunas
+        - paragraph [ref=f53e30]: "1"
+        - paragraph [ref=f53e31]: 0 partial / 0 overdue
+    - generic [ref=f53e32]:
+      - heading "Filter" [level=3] [ref=f53e33]
+      - generic [ref=f53e34]:
+        - generic [ref=f53e35]:
+          - generic [ref=f53e36]: Tanggal Mulai
+          - textbox [ref=f53e37]
+        - generic [ref=f53e38]:
+          - generic [ref=f53e39]: Tanggal Akhir
+          - textbox [ref=f53e40]
+        - generic [ref=f53e41]:
+          - generic [ref=f53e42]: Tahun Ajaran
+          - combobox [ref=f53e43]:
+            - option "Semua Tahun Ajaran" [selected]
+            - option "2026/2027"
+        - generic [ref=f53e44]:
+          - generic [ref=f53e45]: Kategori Pembayaran
+          - combobox [ref=f53e46]:
+            - option "Semua Kategori" [selected]
+            - option "Jemputan"
+            - option "Kaos Olahraga"
+            - option "Komite"
+            - option "Lainnya"
+            - option "Observasi"
+            - option "Pembelajaran"
+            - option "Sarana Prasarana"
+            - option "SPP"
+        - generic [ref=f53e47]:
+          - generic [ref=f53e48]: Kelas
+          - combobox [ref=f53e49]:
+            - option "Semua Kelas" [selected]
+            - option "Kelas 1A"
+        - generic [ref=f53e50]:
+          - generic [ref=f53e51]: Status Tagihan
+          - combobox [ref=f53e52]:
+            - option "Semua Status" [selected]
+            - option "Menunggu"
+            - option "Cicilan"
+            - option "Lunas"
+            - option "Terlambat"
+            - option "Dibatalkan"
+        - generic [ref=f53e53]:
+          - generic [ref=f53e54]: Metode Pembayaran
+          - combobox [ref=f53e55]:
+            - option "Semua Metode" [selected]
+        - generic [ref=f53e56]:
+          - generic [ref=f53e57]: Status Bukti Pembayaran
+          - combobox [ref=f53e58]:
+            - option "Semua Status" [selected]
+            - option "Menunggu"
+            - option "Disetujui"
+            - option "Ditolak"
+      - generic [ref=f53e59]:
+        - generic [ref=f53e60]: Cari Siswa (NIS/Nama)
+        - 'textbox "Contoh: NIS123 atau nama siswa" [ref=f53e61]'
+    - generic [ref=f53e62]:
+      - heading "Detail Transaksi" [level=3] [ref=f53e64]
+      - table [ref=f53e66]:
+        - rowgroup [ref=f53e67]:
+          - row [ref=f53e68]:
+            - columnheader "Siswa" [ref=f53e69]
+            - columnheader "Kelas" [ref=f53e70]
+            - columnheader "Kategori" [ref=f53e71]
+            - columnheader "Periode" [ref=f53e72]
+            - columnheader "Tagihan" [ref=f53e73]
+            - columnheader "Dibayar" [ref=f53e74]
+            - columnheader "Outstanding" [ref=f53e75]
+            - columnheader "Status" [ref=f53e76]
+            - columnheader "Metode" [ref=f53e77]
+            - columnheader "Tanggal" [ref=f53e78]
+            - columnheader "Referensi" [ref=f53e79]
+            - columnheader "Status Pembayaran" [ref=f53e80]
+            - columnheader "Status Bukti" [ref=f53e81]
+        - rowgroup [ref=f53e82]:
+          - row [ref=f53e83]:
+            - cell [ref=f53e84]:
+              - paragraph [ref=f53e85]: Siswa Pertama
+              - paragraph [ref=f53e86]: "001"
+            - cell "-" [ref=f53e87]
+            - cell "SPP" [ref=f53e88]
+            - cell "1 Sep 2026 - 30 Sep 2026" [ref=f53e89]
+            - cell "Rp 100.000" [ref=f53e90]
+            - cell "Rp 0" [ref=f53e91]
+            - cell "Rp 100.000" [ref=f53e92]
+            - cell "pending" [ref=f53e93]
+            - cell "-" [ref=f53e95]
+            - cell "-" [ref=f53e96]
+            - cell "-" [ref=f53e97]
+            - cell "-" [ref=f53e98]
+            - cell "-" [ref=f53e100]
+          - row [ref=f53e102]:
+            - cell [ref=f53e103]:
+              - paragraph [ref=f53e104]: Siswa Pertama
+              - paragraph [ref=f53e105]: "001"
+            - cell "-" [ref=f53e106]
+            - cell "SPP" [ref=f53e107]
+            - cell "-" [ref=f53e108]
+            - cell "Rp 100.000" [ref=f53e109]
+            - cell "Rp 100.000" [ref=f53e110]
+            - cell "Rp 0" [ref=f53e111]
+            - cell "paid" [ref=f53e112]
+            - cell "-" [ref=f53e114]
+            - cell "3 Sep 2026" [ref=f53e115]
+            - cell "REF-001" [ref=f53e116]
+            - cell "completed" [ref=f53e117]
+            - cell "-" [ref=f53e119]
+      - generic [ref=f53e121]:
+        - paragraph [ref=f53e122]: Menampilkan 2 dari 2 transaksi
+        - generic [ref=f53e123]:
+          - button "Sebelumnya" [disabled] [ref=f53e124]
+          - generic [ref=f53e125]: Halaman 1 dari 1
+          - button "Selanjutnya" [disabled] [ref=f53e126]
+  - button "Open Next.js Dev Tools" [ref=f53e132] [cursor=pointer]

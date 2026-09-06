@@ -1,0 +1,12 @@
+export { Navbar } from "./Navbar";
+export { Hero } from "./Hero";
+export { TrustBenefits } from "./TrustBenefits";
+export { PaymentFeatures } from "./PaymentFeatures";
+export { PaymentMethods } from "./PaymentMethods";
+export { ParentBenefits } from "./ParentBenefits";
+export { SchoolBenefits } from "./SchoolBenefits";
+export { HowItWorks } from "./HowItWorks";
+export { Advantages } from "./Advantages";
+export { FAQ } from "./FAQ";
+export { FinalCTA } from "./FinalCTA";
+export { Footer } from "./Footer";

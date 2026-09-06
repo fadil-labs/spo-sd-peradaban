@@ -1,0 +1,43 @@
+- generic [active] [ref=f13e1]:
+  - generic [ref=f13e2]:
+    - generic [ref=f13e3]:
+      - heading "Profil Saya" [level=1] [ref=f13e4]
+      - paragraph [ref=f13e5]: Kelola informasi akun dan keamanan Anda
+    - generic [ref=f13e6]:
+      - generic [ref=f13e7]:
+        - heading "Informasi Akun" [level=2] [ref=f13e8]
+        - generic [ref=f13e9]:
+          - generic [ref=f13e10]:
+            - generic [ref=f13e11]: Nama Lengkap
+            - textbox "Nama Lengkap" [ref=f13e12]: Administrator SD Peradaban
+          - generic [ref=f13e13]:
+            - generic [ref=f13e14]: Email
+            - textbox "Email" [ref=f13e15]: admin@sdperadaban.sch.id
+            - paragraph [ref=f13e16]: Dikelola oleh sistem autentikasi
+          - generic [ref=f13e17]:
+            - generic [ref=f13e18]: Sekolah
+            - textbox "Sekolah" [ref=f13e19]: 11111111-1111-1111-1111-111111111111
+            - paragraph [ref=f13e20]: Ditentukan oleh keanggotaan tenant
+          - generic [ref=f13e21]:
+            - generic [ref=f13e22]: Role
+            - textbox "Role" [ref=f13e23]: Admin
+            - paragraph [ref=f13e24]: Dikontrol oleh sistem
+          - generic [ref=f13e25]:
+            - generic [ref=f13e26]: Nomor Telepon
+            - textbox "Nomor Telepon" [ref=f13e27]:
+              - /placeholder: Opsional
+          - button "Simpan Perubahan" [ref=f13e28]
+      - generic [ref=f13e29]:
+        - heading "Ubah Password" [level=2] [ref=f13e30]
+        - generic [ref=f13e31]:
+          - generic [ref=f13e32]:
+            - generic [ref=f13e33]: Password Baru
+            - textbox "Password Baru" [ref=f13e34]:
+              - /placeholder: Minimal 8 karakter
+          - generic [ref=f13e35]:
+            - generic [ref=f13e36]: Konfirmasi Password
+            - textbox "Konfirmasi Password" [ref=f13e37]:
+              - /placeholder: Ulangi password baru
+          - button "Simpan Password Baru" [ref=f13e38]
+      - button "Keluar" [ref=f13e40]
+  - button "Open Next.js Dev Tools" [ref=f13e46] [cursor=pointer]

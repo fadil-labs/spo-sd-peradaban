@@ -1,0 +1,10 @@
+- generic [active] [ref=f2e1]:
+  - generic [ref=f2e3]:
+    - generic [ref=f2e4]: "404"
+    - generic [ref=f2e6]:
+      - heading "Halaman Tidak Ditemukan" [level=1] [ref=f2e7]
+      - paragraph [ref=f2e8]: Halaman yang Anda cari tidak ada atau telah dipindahkan.
+    - button [ref=f2e9]:
+      - link "Kembali ke Dashboard" [ref=f2e10] [cursor=pointer]:
+        - /url: /dashboard/admin
+  - button "Open Next.js Dev Tools" [ref=f2e16] [cursor=pointer]

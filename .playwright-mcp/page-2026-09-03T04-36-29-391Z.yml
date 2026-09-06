@@ -1,0 +1,48 @@
+- generic [active] [ref=f11e1]:
+  - generic [ref=f11e2]:
+    - generic [ref=f11e3]:
+      - heading "Log Keuangan" [level=2] [ref=f11e4]
+      - paragraph [ref=f11e5]: Audit trail transaksi keuangan
+    - generic [ref=f11e6]:
+      - heading "Filter" [level=3] [ref=f11e7]
+      - generic [ref=f11e8]:
+        - generic [ref=f11e9]:
+          - generic [ref=f11e10]: Jenis Aksi
+          - combobox [ref=f11e11]:
+            - option "Semua Aksi" [selected]
+            - option "Pembayaran Dibuat"
+            - option "Pembayaran Selesai"
+            - option "Pembayaran Gagal"
+            - option "Pembayaran Dibatalkan"
+            - option "Pembayaran Dikembalikan"
+            - option "Bukti Dikirim"
+            - option "Bukti Disetujui"
+            - option "Bukti Ditolak"
+            - option "Gateway Dibuat"
+            - option "Gateway Berhasil"
+            - option "Gateway Gagal"
+            - option "Tagihan Dibuat"
+            - option "Status Tagihan Berubah"
+            - option "Metode Pembayaran Diubah"
+            - option "Konfigurasi Keuangan Diubah"
+            - option "Lainnya"
+        - generic [ref=f11e12]:
+          - generic [ref=f11e13]: Jenis Entitas
+          - combobox [ref=f11e14]:
+            - option "Semua Entitas" [selected]
+            - option "Pembayaran"
+            - option "Tagihan Siswa"
+            - option "Bukti Pembayaran"
+            - option "Transaksi Gateway"
+            - option "Metode Pembayaran Sekolah"
+            - option "Kategori Pembayaran"
+            - option "Laporan Keuangan"
+            - option "Lainnya"
+        - generic [ref=f11e15]:
+          - generic [ref=f11e16]: Tanggal Mulai
+          - textbox [ref=f11e17]
+        - generic [ref=f11e18]:
+          - generic [ref=f11e19]: Tanggal Akhir
+          - textbox [ref=f11e20]
+    - paragraph [ref=f11e23]: Tidak ada log keuangan.
+  - button "Open Next.js Dev Tools" [ref=f11e29] [cursor=pointer]

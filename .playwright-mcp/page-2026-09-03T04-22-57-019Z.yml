@@ -1,0 +1,25 @@
+- generic [active] [ref=f5e1]:
+  - generic [ref=f5e3]:
+    - generic [ref=f5e4]:
+      - generic [ref=f5e5]: SPO
+      - heading "SPO SD Peradaban Login" [level=1] [ref=f5e7]
+      - paragraph [ref=f5e8]: Masuk untuk mengakses aplikasi
+    - generic [ref=f5e10]:
+      - generic [ref=f5e11]:
+        - generic [ref=f5e12]: Email
+        - textbox "Email" [ref=f5e13]:
+          - /placeholder: nama@sekolah.id
+      - generic [ref=f5e14]:
+        - generic [ref=f5e15]: Password
+        - textbox "Password" [ref=f5e16]:
+          - /placeholder: ••••••••
+      - generic [ref=f5e17]:
+        - generic [ref=f5e18]:
+          - checkbox "Ingat saya" [ref=f5e19]
+          - generic [ref=f5e20]: Ingat saya
+        - link "Lupa password?" [ref=f5e21] [cursor=pointer]:
+          - /url: /forgot-password
+      - button "Masuk" [ref=f5e22]
+    - link "Kembali ke Beranda" [ref=f5e24] [cursor=pointer]:
+      - /url: /
+  - button "Open Next.js Dev Tools" [ref=f5e32] [cursor=pointer]

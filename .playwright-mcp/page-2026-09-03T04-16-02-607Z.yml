@@ -1,0 +1,44 @@
+- generic [active] [ref=f4e1]:
+  - generic [ref=f4e2]:
+    - generic [ref=f4e3]:
+      - heading "Profil Saya" [level=1] [ref=f4e4]
+      - paragraph [ref=f4e5]: Kelola informasi akun dan keamanan Anda
+    - generic [ref=f4e6]:
+      - generic [ref=f4e7]:
+        - heading "Informasi Akun" [level=2] [ref=f4e8]
+        - generic [ref=f4e9]:
+          - generic [ref=f4e10]:
+            - generic [ref=f4e11]: Nama Lengkap
+            - textbox "Nama Lengkap" [ref=f4e12]: Orang Tua Siswa 1
+          - generic [ref=f4e13]:
+            - generic [ref=f4e14]: Email
+            - textbox "Email" [ref=f4e15]: parent@test.local
+            - paragraph [ref=f4e16]: Dikelola oleh sistem autentikasi
+          - generic [ref=f4e17]:
+            - generic [ref=f4e18]: Sekolah
+            - textbox "Sekolah" [ref=f4e19]: 11111111-1111-1111-1111-111111111111
+            - paragraph [ref=f4e20]: Ditentukan oleh keanggotaan tenant
+          - generic [ref=f4e21]:
+            - generic [ref=f4e22]: Role
+            - textbox "Role" [ref=f4e23]: Orang Tua
+            - paragraph [ref=f4e24]: Dikontrol oleh sistem
+          - generic [ref=f4e25]:
+            - generic [ref=f4e26]: Nomor Telepon
+            - textbox "Nomor Telepon" [ref=f4e27]:
+              - /placeholder: Opsional
+          - button "Simpan Perubahan" [ref=f4e28]
+      - generic [ref=f4e29]:
+        - heading "Ubah Password" [level=2] [ref=f4e30]
+        - generic [ref=f4e31]:
+          - generic [ref=f4e32]:
+            - generic [ref=f4e33]: Password Baru
+            - textbox "Password Baru" [ref=f4e34]:
+              - /placeholder: Minimal 8 karakter
+          - generic [ref=f4e35]:
+            - generic [ref=f4e36]: Konfirmasi Password
+            - textbox "Konfirmasi Password" [ref=f4e37]:
+              - /placeholder: Ulangi password baru
+          - button "Simpan Password Baru" [ref=f4e38]
+      - button "Keluar" [ref=f4e40]
+  - button "Open Next.js Dev Tools" [ref=f4e46] [cursor=pointer]
+  - alert [ref=f4e50]

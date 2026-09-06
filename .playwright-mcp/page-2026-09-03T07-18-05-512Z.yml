@@ -1,0 +1,12 @@
+- generic [active] [ref=f16e1]:
+  - generic [ref=f16e2]:
+    - generic [ref=f16e3]:
+      - heading "Tagihan Anak" [level=2] [ref=f16e4]
+      - paragraph [ref=f16e5]: Lihat dan kelola tagihan anak Anda
+    - combobox [ref=f16e7]:
+      - option "Semua Status" [selected]
+      - option "Menunggu"
+      - option "Cicilan"
+      - option "Lunas"
+      - option "Terlambat"
+  - button "Open Next.js Dev Tools" [ref=f16e17] [cursor=pointer]

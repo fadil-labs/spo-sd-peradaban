@@ -1,0 +1,23 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - heading "Siswa" [level=2] [ref=e5]
+        - paragraph [ref=e6]: Kelola data siswa
+      - button "Tambah Siswa" [ref=e7]
+    - generic [ref=e8]:
+      - textbox "Cari NIS atau nama siswa..." [ref=e13]
+      - combobox [ref=e14]:
+        - option "Semua Status" [selected]
+        - option "Aktif"
+        - option "Tidak Aktif"
+        - option "Lulus"
+        - option "Pindah"
+    - generic [ref=e15]:
+      - paragraph [ref=e16]: Menampilkan 0 dari 0 siswa
+      - generic [ref=e17]:
+        - button "Sebelumnya" [disabled] [ref=e18]
+        - generic [ref=e19]: Halaman 1 dari 1
+        - button "Selanjutnya" [disabled] [ref=e20]
+  - button "Open Next.js Dev Tools" [ref=e30] [cursor=pointer]
+  - alert [ref=e34]

@@ -1,0 +1,44 @@
+- generic [active] [ref=f2e1]:
+  - generic [ref=f2e2]:
+    - generic [ref=f2e3]:
+      - heading "Profil Saya" [level=1] [ref=f2e4]
+      - paragraph [ref=f2e5]: Kelola informasi akun dan keamanan Anda
+    - generic [ref=f2e6]:
+      - generic [ref=f2e7]:
+        - heading "Informasi Akun" [level=2] [ref=f2e8]
+        - generic [ref=f2e9]:
+          - generic [ref=f2e10]:
+            - generic [ref=f2e11]: Nama Lengkap
+            - textbox "Nama Lengkap" [ref=f2e12]: Administrator SD Peradaban
+          - generic [ref=f2e13]:
+            - generic [ref=f2e14]: Email
+            - textbox "Email" [ref=f2e15]: admin@sdperadaban.sch.id
+            - paragraph [ref=f2e16]: Dikelola oleh sistem autentikasi
+          - generic [ref=f2e17]:
+            - generic [ref=f2e18]: Sekolah
+            - textbox "Sekolah" [ref=f2e19]: 11111111-1111-1111-1111-111111111111
+            - paragraph [ref=f2e20]: Ditentukan oleh keanggotaan tenant
+          - generic [ref=f2e21]:
+            - generic [ref=f2e22]: Role
+            - textbox "Role" [ref=f2e23]: Admin
+            - paragraph [ref=f2e24]: Dikontrol oleh sistem
+          - generic [ref=f2e25]:
+            - generic [ref=f2e26]: Nomor Telepon
+            - textbox "Nomor Telepon" [ref=f2e27]:
+              - /placeholder: Opsional
+          - button "Simpan Perubahan" [ref=f2e28]
+      - generic [ref=f2e29]:
+        - heading "Ubah Password" [level=2] [ref=f2e30]
+        - generic [ref=f2e31]:
+          - generic [ref=f2e32]:
+            - generic [ref=f2e33]: Password Baru
+            - textbox "Password Baru" [ref=f2e34]:
+              - /placeholder: Minimal 8 karakter
+          - generic [ref=f2e35]:
+            - generic [ref=f2e36]: Konfirmasi Password
+            - textbox "Konfirmasi Password" [ref=f2e37]:
+              - /placeholder: Ulangi password baru
+          - button "Simpan Password Baru" [ref=f2e38]
+      - button "Keluar" [ref=f2e40]
+  - button "Open Next.js Dev Tools" [ref=f2e46] [cursor=pointer]
+  - alert [ref=f2e50]

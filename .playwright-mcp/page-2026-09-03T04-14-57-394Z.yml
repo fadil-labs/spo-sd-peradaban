@@ -1,0 +1,32 @@
+- generic [active] [ref=f3e1]:
+  - button "Open Next.js Dev Tools" [ref=f3e46] [cursor=pointer]
+  - alert [ref=f3e50]: Dashboard Orang Tua
+  - generic [ref=f3e77]:
+    - generic [ref=f3e78]:
+      - heading "Dashboard Orang Tua" [level=1] [ref=f3e79]
+      - paragraph [ref=f3e80]: Ringkasan tagihan dan pembayaran anak
+    - generic [ref=f3e81]:
+      - generic [ref=f3e82]:
+        - paragraph [ref=f3e83]: Total Tagihan
+        - paragraph [ref=f3e84]: Rp 200.000
+        - paragraph [ref=f3e85]: 2 tagihan
+      - generic [ref=f3e86]:
+        - paragraph [ref=f3e87]: Total Terbayar
+        - paragraph [ref=f3e88]: Rp 100.000
+        - paragraph [ref=f3e89]: Termasuk pending
+      - generic [ref=f3e90]:
+        - paragraph [ref=f3e91]: Outstanding
+        - paragraph [ref=f3e92]: Rp 100.000
+        - paragraph [ref=f3e93]: Sisa tagihan
+      - generic [ref=f3e94]:
+        - paragraph [ref=f3e95]: Pembayaran Pending
+        - paragraph [ref=f3e96]: "0"
+        - paragraph [ref=f3e97]: Menunggu verifikasi
+    - link [ref=f3e98] [cursor=pointer]:
+      - /url: /dashboard/orang-tua/bills
+      - heading "Tagihan Anak" [level=2] [ref=f3e99]
+      - paragraph [ref=f3e100]: Lihat dan bayar tagihan anak
+    - link [ref=f3e101] [cursor=pointer]:
+      - /url: /dashboard/orang-tua/notifications
+      - heading "Notifikasi" [level=2] [ref=f3e102]
+      - paragraph [ref=f3e103]: Pusat notifikasi

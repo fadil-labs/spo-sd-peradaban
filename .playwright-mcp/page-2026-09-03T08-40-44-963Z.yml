@@ -1,0 +1,3 @@
+- generic [active] [ref=f46e1]:
+  - paragraph [ref=f46e4]: "Gagal memuat data tagihan. Detail: {\"code\":\"PGRST200\",\"details\":\"Searched for a foreign key relationship between 'student_bills' and 'student_enrollment' in the schema 'public', but no matches were found.\",\"hint\":\"Perhaps you meant 'student_enrollments' instead of 'student_enrollment'.\",\"message\":\"Could not find a relationship between 'student_bills' and 'student_enrollment' in the schema cache\"}"
+  - button "Open Next.js Dev Tools" [ref=f46e10] [cursor=pointer]

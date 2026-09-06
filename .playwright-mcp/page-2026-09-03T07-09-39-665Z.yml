@@ -1,0 +1,71 @@
+- generic [active] [ref=f13e1]:
+  - generic [ref=f13e3]:
+    - generic [ref=f13e4]:
+      - heading "Dashboard Admin" [level=1] [ref=f13e5]
+      - paragraph [ref=f13e6]: Ringkasan operasional sekolah
+    - generic [ref=f13e7]:
+      - generic [ref=f13e8]:
+        - paragraph [ref=f13e9]: Total Siswa
+        - paragraph [ref=f13e10]: "1"
+        - paragraph [ref=f13e11]: Siswa aktif
+      - generic [ref=f13e12]:
+        - paragraph [ref=f13e13]: Total Tagihan
+        - paragraph [ref=f13e14]: Rp 200.000
+        - paragraph [ref=f13e15]: 2 tagihan
+      - generic [ref=f13e16]:
+        - paragraph [ref=f13e17]: Outstanding
+        - paragraph [ref=f13e18]: Rp 100.000
+        - paragraph [ref=f13e19]: Sisa tagihan
+      - generic [ref=f13e20]:
+        - paragraph [ref=f13e21]: Pembayaran Pending
+        - paragraph [ref=f13e22]: "0"
+        - paragraph [ref=f13e23]: Rp 0
+      - generic [ref=f13e24]:
+        - paragraph [ref=f13e25]: Bukti Pending
+        - paragraph [ref=f13e26]: "0"
+        - paragraph [ref=f13e27]: Menunggu verifikasi
+    - generic [ref=f13e28]:
+      - heading "Pembayaran Terbaru" [level=3] [ref=f13e30]
+      - table [ref=f13e32]:
+        - rowgroup [ref=f13e33]:
+          - row [ref=f13e34]:
+            - columnheader "Siswa" [ref=f13e35]
+            - columnheader "Jumlah" [ref=f13e36]
+            - columnheader "Metode" [ref=f13e37]
+            - columnheader "Status" [ref=f13e38]
+            - columnheader "Tanggal" [ref=f13e39]
+        - rowgroup [ref=f13e40]:
+          - row [ref=f13e41]:
+            - cell [ref=f13e42]:
+              - paragraph [ref=f13e43]: Siswa Pertama
+              - paragraph [ref=f13e44]: "001"
+            - cell "Rp 100.000" [ref=f13e45]
+            - cell "-" [ref=f13e46]
+            - cell "Berhasil" [ref=f13e47]
+            - cell "3 Sep 2026" [ref=f13e49]
+    - generic [ref=f13e50]:
+      - link [ref=f13e51] [cursor=pointer]:
+        - /url: /dashboard/admin/student-bills
+        - heading "Tagihan Siswa" [level=2] [ref=f13e52]
+        - paragraph [ref=f13e53]: Kelola tagihan dan pembayaran siswa
+      - link [ref=f13e54] [cursor=pointer]:
+        - /url: /dashboard/admin/financial-reports
+        - heading "Laporan Keuangan" [level=2] [ref=f13e55]
+        - paragraph [ref=f13e56]: Rekonsiliasi dan laporan
+      - link [ref=f13e57] [cursor=pointer]:
+        - /url: /dashboard/admin/payment-proofs
+        - heading "Bukti Pembayaran" [level=2] [ref=f13e58]
+        - paragraph [ref=f13e59]: Verifikasi bukti pembayaran
+      - link [ref=f13e60] [cursor=pointer]:
+        - /url: /dashboard/admin/payments
+        - heading "Monitoring Pembayaran" [level=2] [ref=f13e61]
+        - paragraph [ref=f13e62]: Pantau semua transaksi pembayaran
+      - link [ref=f13e63] [cursor=pointer]:
+        - /url: /dashboard/admin/financial-audit-logs
+        - heading "Log Keuangan" [level=2] [ref=f13e64]
+        - paragraph [ref=f13e65]: Audit trail keuangan
+      - link [ref=f13e66] [cursor=pointer]:
+        - /url: /dashboard/admin/notifications
+        - heading "Notifikasi" [level=2] [ref=f13e67]
+        - paragraph [ref=f13e68]: Pusat notifikasi
+  - button "Open Next.js Dev Tools" [ref=f13e74] [cursor=pointer]

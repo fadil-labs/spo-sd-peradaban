@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+:root {
+  --background: #F7FAF8;
+  --foreground: #10251E;
+  --surface: #FFFFFF;
+  --primary: #0F5C46;
+  --primary-dark: #084636;
+  --emerald: #138A68;
+  --gold: #987015;
+  --muted: #6B7C75;
+  --success: #16A34A;
+  --warning: #D97706;
+  --danger: #DC2626;
+  --border: #E5ECE8;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-dark);
+  --color-emerald: var(--emerald);
+  --color-gold: var(--gold);
+  --color-muted: var(--muted);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-border: var(--border);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+}
+
+::selection {
+  background-color: var(--primary);
+  color: white;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media print {
+  nav, header, .no-print, [class*="sidebar"], [class*="topbar"] {
+    display: none !important;
+  }
+
+  .receipt-container {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .receipt-container > div {
+    box-shadow: none !important;
+    border: 1px solid #e5e5e5 !important;
+  }
+
+  body {
+    font-size: 12pt;
+    color: #000;
+  }
+}

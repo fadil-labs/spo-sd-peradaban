@@ -1,0 +1,40 @@
+- generic [active] [ref=f3e1]:
+  - generic [ref=f3e2]:
+    - generic [ref=f3e3]:
+      - heading "Notifikasi" [level=2] [ref=f3e4]
+      - paragraph [ref=f3e5]: Notifikasi operasional sekolah
+    - generic [ref=f3e6]:
+      - heading "Filter" [level=3] [ref=f3e7]
+      - generic [ref=f3e8]:
+        - generic [ref=f3e9]:
+          - generic [ref=f3e10]: Jenis Notifikasi
+          - combobox [ref=f3e11]:
+            - option "Semua Notifikasi" [selected]
+            - option "Tagihan Baru"
+            - option "Pembayaran Selesai"
+            - option "Pembayaran Gagal"
+            - option "Pembayaran Dibatalkan"
+            - option "Bukti Dikirim"
+            - option "Bukti Disetujui"
+            - option "Bukti Ditolak"
+            - option "Gateway Berhasil"
+            - option "Umum"
+        - generic [ref=f3e12]:
+          - generic [ref=f3e13]: Jenis Entitas
+          - combobox [ref=f3e14]:
+            - option "Semua Entitas" [selected]
+            - option "Tagihan Siswa"
+            - option "Pembayaran"
+            - option "Bukti Pembayaran"
+            - option "Transaksi Gateway"
+            - option "Siswa"
+            - option "Umum"
+        - generic [ref=f3e15]:
+          - generic [ref=f3e16]: Tanggal Mulai
+          - textbox [ref=f3e17]
+        - generic [ref=f3e18]:
+          - generic [ref=f3e19]: Tanggal Akhir
+          - textbox [ref=f3e20]
+    - paragraph [ref=f3e23]: Tidak ada notifikasi.
+  - button "Open Next.js Dev Tools" [ref=f3e29] [cursor=pointer]
+  - alert [ref=f3e33]
