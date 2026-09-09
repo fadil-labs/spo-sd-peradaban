@@ -19,7 +19,7 @@ export default async function StudentBillDetailPage({ params }: { params: Promis
 
   return (
       <Suspense fallback={<TableSkeleton rows={5} columns={5} />}>
-      <BillDetailClient bill={result.bill} payments={result.payments} />
+      <BillDetailClient bill={result.bill} payments={result.payments} paymentMethods={result.paymentMethods || []} schoolPaymentMethods={result.schoolPaymentMethods || []} />
     </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Loader2, Receipt } from "lucide-react";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
@@ -33,6 +33,8 @@ type Payment = {
 type Props = {
   bill: Bill;
   payments: Payment[];
+  paymentMethods: { id: string; name: string; method_type: string | null }[];
+  schoolPaymentMethods: { id: string; payment_method_id: string; is_active: boolean; payment_methods: { id: string; name: string; method_type: string | null } | null }[];
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -51,7 +53,7 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: "bg-danger/10 text-danger",
 };
 
-export default function BillDetailClient({ bill, payments }: Props) {
+export default function BillDetailClient({ bill, payments, paymentMethods, schoolPaymentMethods }: Props) {
   const [amount, setAmount] = useState("");
   const [paymentMethodId, setPaymentMethodId] = useState("");
   const [schoolPaymentMethodId, setSchoolPaymentMethodId] = useState("");
@@ -61,6 +63,21 @@ export default function BillDetailClient({ bill, payments }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const toast = useToast();
+
+  useEffect(() => {
+    if (paymentMethods.length > 0 && !paymentMethodId) {
+      setPaymentMethodId(paymentMethods[0].id);
+    }
+  }, [paymentMethods, paymentMethodId]);
+
+  useEffect(() => {
+    if (paymentMethodId && schoolPaymentMethods.length > 0 && !schoolPaymentMethodId) {
+      const defaultMethod = schoolPaymentMethods.find(spm => spm.payment_method_id === paymentMethodId && spm.is_active);
+      if (defaultMethod) {
+        setSchoolPaymentMethodId(defaultMethod.id);
+      }
+    }
+  }, [paymentMethodId, schoolPaymentMethods, schoolPaymentMethodId]);
 
   const totalPaid = payments
     .filter((p) => p.status === "completed" || p.status === "pending")
@@ -185,42 +202,52 @@ export default function BillDetailClient({ bill, payments }: Props) {
               </div>
             </div>
 
-            <div>
-              <label htmlFor="payment_method_id" className="block text-xs text-muted mb-1.5">
-                Metode Pembayaran
-              </label>
-              <select
-                id="payment_method_id"
-                value={paymentMethodId}
-                onChange={(e) => {
-                  setPaymentMethodId(e.target.value);
-                  setSchoolPaymentMethodId("");
-                }}
-                className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                required
-                disabled={isSubmitting}
-              >
-                <option value="">Pilih metode</option>
-              </select>
-            </div>
-
-            {paymentMethodId && (
               <div>
-                <label htmlFor="school_payment_method_id" className="block text-xs text-muted mb-1.5">
-                  Konfigurasi Sekolah
+                <label htmlFor="payment_method_id" className="block text-xs text-muted mb-1.5">
+                  Metode Pembayaran
                 </label>
                 <select
-                  id="school_payment_method_id"
-                  value={schoolPaymentMethodId}
-                  onChange={(e) => setSchoolPaymentMethodId(e.target.value)}
+                  id="payment_method_id"
+                  value={paymentMethodId}
+                  onChange={(e) => {
+                    setPaymentMethodId(e.target.value);
+                    setSchoolPaymentMethodId("");
+                  }}
                   className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   required
                   disabled={isSubmitting}
                 >
-                  <option value="">Pilih konfigurasi</option>
+                  <option value="">Pilih metode</option>
+                  {paymentMethods.map((pm) => (
+                    <option key={pm.id} value={pm.id}>{pm.name}</option>
+                  ))}
                 </select>
               </div>
-            )}
+
+              {paymentMethodId && (
+                <div>
+                  <label htmlFor="school_payment_method_id" className="block text-xs text-muted mb-1.5">
+                    Konfigurasi Sekolah
+                  </label>
+                  <select
+                    id="school_payment_method_id"
+                    value={schoolPaymentMethodId}
+                    onChange={(e) => setSchoolPaymentMethodId(e.target.value)}
+                    className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    required
+                    disabled={isSubmitting}
+                  >
+                    <option value="">Pilih konfigurasi</option>
+                    {schoolPaymentMethods
+                      .filter(spm => spm.payment_method_id === paymentMethodId)
+                      .map((spm) => (
+                        <option key={spm.id} value={spm.id}>
+                          {spm.payment_methods?.name || "Konfigurasi"} {spm.is_active ? "" : "(Nonaktif)"}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
 
             {error && (
               <div className="rounded-md border border-danger/20 bg-danger/10 px-4 py-3">

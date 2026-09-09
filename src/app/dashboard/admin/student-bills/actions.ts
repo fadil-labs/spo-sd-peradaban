@@ -183,6 +183,27 @@ export async function getBillDetailAction(id: string) {
     return { error: "Gagal memuat riwayat pembayaran." };
   }
 
+  const { data: paymentMethods, error: paymentMethodsError } = await supabase
+    .from("payment_methods")
+    .select("id, name, method_type")
+    .eq("is_active", true)
+    .order("name", { ascending: true });
+
+  if (paymentMethodsError) {
+    return { error: "Gagal memuat metode pembayaran." };
+  }
+
+  const { data: schoolPaymentMethods, error: schoolPaymentMethodsError } = await supabase
+    .from("school_payment_methods")
+    .select("id, payment_method_id, is_active, payment_methods (id, name, method_type)")
+    .eq("school_id", profile.school_id)
+    .eq("is_active", true)
+    .order("payment_methods(name)", { ascending: true });
+
+  if (schoolPaymentMethodsError) {
+    return { error: "Gagal memuat konfigurasi pembayaran sekolah." };
+  }
+
   const normalizedBill = {
     id: bill.id,
     school_id: bill.school_id,
@@ -201,7 +222,6 @@ export async function getBillDetailAction(id: string) {
     payment_categories: Array.isArray(bill.payment_categories) ? bill.payment_categories[0] : bill.payment_categories,
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const normalizedPayments = (payments || []).map((p: any) => ({
     id: p.id,
     amount: p.amount,
@@ -212,7 +232,20 @@ export async function getBillDetailAction(id: string) {
     payment_methods: Array.isArray(p.payment_methods) ? p.payment_methods[0] : p.payment_methods,
   }));
 
-  return { bill: normalizedBill, payments: normalizedPayments };
+  const normalizedPaymentMethods = (paymentMethods || []).map((pm: any) => ({
+    id: pm.id,
+    name: pm.name,
+    method_type: pm.method_type,
+  }));
+
+  const normalizedSchoolPaymentMethods = (schoolPaymentMethods || []).map((spm: any) => ({
+    id: spm.id,
+    payment_method_id: spm.payment_method_id,
+    is_active: spm.is_active,
+    payment_methods: Array.isArray(spm.payment_methods) ? spm.payment_methods[0] : spm.payment_methods,
+  }));
+
+  return { bill: normalizedBill, payments: normalizedPayments, paymentMethods: normalizedPaymentMethods, schoolPaymentMethods: normalizedSchoolPaymentMethods };
 }
 
 export async function createStudentBillAction(formData: FormData) {
