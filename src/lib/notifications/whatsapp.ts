@@ -52,12 +52,65 @@ export async function sendWhatsAppMessage(phoneNumberId: string, to: string, tex
   }
 }
 
+export async function sendWhatsAppTemplate(phoneNumberId: string, to: string, templateName: string, languageCode: string, variables: string[]) {
+  const token = process.env.WHATSAPP_API_TOKEN;
+  if (!token) {
+    console.error("[WhatsApp] WHATSAPP_API_TOKEN is not set");
+    return;
+  }
+
+  const formattedTo = formatPhoneNumber(to);
+  const url = `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`;
+
+  const components: any[] = [
+    {
+      type: "body",
+      parameters: variables.map((value) => ({
+        type: "text",
+        text: value,
+      })),
+    },
+  ];
+
+  const payload = {
+    messaging_product: "whatsapp",
+    to: formattedTo,
+    type: "template",
+    template: {
+      name: templateName,
+      language: { code: languageCode },
+      components,
+    },
+  };
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error("[WhatsApp] Failed to send template:", response.status, error);
+    } else {
+      const result = await response.json();
+      console.log(`[WhatsApp] Template sent to ${formattedTo}:`, result);
+    }
+  } catch (error) {
+    console.error("[WhatsApp] Exception:", error);
+  }
+}
+
 export async function sendNewBillNotification(studentId: string, billTitle: string, amount: number, dueDate: string) {
   const supabase = await createClient();
 
   const { data: guardianLinks } = await supabase
     .from("student_guardians")
-    .select("guardian_profile_id, profiles(phone)")
+    .select("guardian_profile_id, profiles(full_name, phone)")
     .eq("student_id", studentId);
 
   if (!guardianLinks || guardianLinks.length === 0) return;
@@ -69,9 +122,17 @@ export async function sendNewBillNotification(studentId: string, billTitle: stri
     const profile = Array.isArray(link.profiles) ? link.profiles[0] : link.profiles;
     if (!profile?.phone) continue;
 
-    const text = `Halo! Ada tagihan baru:\n\n*${billTitle}*\nJumlah: Rp ${amount.toLocaleString("id-ID")}\nJatuh tempo: ${dueDate}\n\nSilakan lakukan pembayaran.`;
+    const guardianName = profile.full_name?.trim() || "Orang Tua";
+    const formattedAmount = `Rp ${amount.toLocaleString("id-ID")}`;
+    const formattedDate = new Date(dueDate).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 
-    await sendWhatsAppMessage(phoneNumberId, profile.phone, text);
+    await sendWhatsAppTemplate(
+      phoneNumberId,
+      profile.phone,
+      "notifikasi_tagihan",
+      "id",
+      [guardianName, billTitle, formattedAmount, formattedDate]
+    );
   }
 }
 
@@ -80,7 +141,7 @@ export async function sendOverdueNotification(studentId: string, billTitle: stri
 
   const { data: guardianLinks } = await supabase
     .from("student_guardians")
-    .select("guardian_profile_id, profiles(phone)")
+    .select("guardian_profile_id, profiles(full_name, phone)")
     .eq("student_id", studentId);
 
   if (!guardianLinks || guardianLinks.length === 0) return;
@@ -92,9 +153,17 @@ export async function sendOverdueNotification(studentId: string, billTitle: stri
     const profile = Array.isArray(link.profiles) ? link.profiles[0] : link.profiles;
     if (!profile?.phone) continue;
 
-    const text = `*Tagihan Terlambat*\n\n${billTitle}\nJumlah: Rp ${amount.toLocaleString("id-ID")}\nJatuh tempo: ${dueDate}\n\nSegera lakukan pembayaran.`;
+    const guardianName = profile.full_name?.trim() || "Orang Tua";
+    const formattedAmount = `Rp ${amount.toLocaleString("id-ID")}`;
+    const formattedDate = new Date(dueDate).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 
-    await sendWhatsAppMessage(phoneNumberId, profile.phone, text);
+    await sendWhatsAppTemplate(
+      phoneNumberId,
+      profile.phone,
+      "notifikasi_tagihan",
+      "id",
+      [guardianName, billTitle, formattedAmount, formattedDate]
+    );
   }
 }
 
@@ -103,7 +172,7 @@ export async function sendPaymentConfirmation(studentId: string, billTitle: stri
 
   const { data: guardianLinks } = await supabase
     .from("student_guardians")
-    .select("guardian_profile_id, profiles(phone)")
+    .select("guardian_profile_id, profiles(full_name, phone)")
     .eq("student_id", studentId);
 
   if (!guardianLinks || guardianLinks.length === 0) return;
@@ -115,8 +184,15 @@ export async function sendPaymentConfirmation(studentId: string, billTitle: stri
     const profile = Array.isArray(link.profiles) ? link.profiles[0] : link.profiles;
     if (!profile?.phone) continue;
 
-    const text = `*Pembayaran Berhasil*\n\n${billTitle}\nJumlah: Rp ${amount.toLocaleString("id-ID")}\nStatus: Lunas\n\nTerima kasih.`;
+    const guardianName = profile.full_name?.trim() || "Orang Tua";
+    const formattedAmount = `Rp ${amount.toLocaleString("id-ID")}`;
 
-    await sendWhatsAppMessage(phoneNumberId, profile.phone, text);
+    await sendWhatsAppTemplate(
+      phoneNumberId,
+      profile.phone,
+      "notifikasi_tagihan",
+      "id",
+      [guardianName, billTitle, formattedAmount, "Lunas"]
+    );
   }
 }
