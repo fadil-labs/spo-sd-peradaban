@@ -1,4 +1,17 @@
-const fetch = require('node-fetch');
+"use server";
+
+import { createClient } from "@/lib/supabase/server";
+
+function formatPhoneNumber(phone: string): string {
+  const cleaned = phone.replace(/[^0-9]/g, "");
+  if (cleaned.startsWith("0")) {
+    return "62" + cleaned.slice(1);
+  }
+  if (cleaned.startsWith("+")) {
+    return cleaned.slice(1);
+  }
+  return cleaned;
+}
 
 export async function sendWhatsAppMessage(phoneNumberId: string, to: string, text: string) {
   const token = process.env.WHATSAPP_API_TOKEN;
@@ -7,11 +20,12 @@ export async function sendWhatsAppMessage(phoneNumberId: string, to: string, tex
     return;
   }
 
+  const formattedTo = formatPhoneNumber(to);
   const url = `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`;
 
   const payload = {
     messaging_product: "whatsapp",
-    to,
+    to: formattedTo,
     type: "text",
     text: { body: text },
   };
@@ -31,7 +45,7 @@ export async function sendWhatsAppMessage(phoneNumberId: string, to: string, tex
       console.error("[WhatsApp] Failed to send:", response.status, error);
     } else {
       const result = await response.json();
-      console.log(`[WhatsApp] Sent to ${to}:`, result);
+      console.log(`[WhatsApp] Sent to ${formattedTo}:`, result);
     }
   } catch (error) {
     console.error("[WhatsApp] Exception:", error);
@@ -39,8 +53,7 @@ export async function sendWhatsAppMessage(phoneNumberId: string, to: string, tex
 }
 
 export async function sendNewBillNotification(studentId: string, billTitle: string, amount: number, dueDate: string) {
-  const { createClient } = require("@/lib/supabase/server");
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: guardianLinks } = await supabase
     .from("student_guardians")
@@ -63,8 +76,7 @@ export async function sendNewBillNotification(studentId: string, billTitle: stri
 }
 
 export async function sendOverdueNotification(studentId: string, billTitle: string, amount: number, dueDate: string) {
-  const { createClient } = require("@/lib/supabase/server");
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: guardianLinks } = await supabase
     .from("student_guardians")
@@ -87,8 +99,7 @@ export async function sendOverdueNotification(studentId: string, billTitle: stri
 }
 
 export async function sendPaymentConfirmation(studentId: string, billTitle: string, amount: number) {
-  const { createClient } = require("@/lib/supabase/server");
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: guardianLinks } = await supabase
     .from("student_guardians")
