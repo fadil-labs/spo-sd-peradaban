@@ -1,24 +1,55 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 
-export async function GET() {
+function getBearerToken(req: Request): string | null {
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader) return null;
+  const parts = authHeader.split(" ");
+  if (parts[0] !== "Bearer" || parts.length !== 2) return null;
+  return parts[1].trim() || null;
+}
+
+export async function GET(req: Request) {
   const supabase = await createClient();
+  const adminSupabase = await createAdminClient();
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+  const bearerToken = getBearerToken(req);
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let profile = null;
 
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (bearerToken && serviceRoleKey && bearerToken === serviceRoleKey) {
+    const { data: adminProfile } = await adminSupabase
+      .from("profiles")
+      .select("school_id, role")
+      .eq("role", "admin")
+      .limit(1)
+      .maybeSingle();
+
+    profile = adminProfile;
+  } else {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { data: userProfile, error: profileError } = await supabase
+      .from("profiles")
+      .select("school_id, role")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError || !userProfile) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    profile = userProfile;
   }
 
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("school_id, role")
-    .eq("id", user.id)
-    .single();
-
-  if (profileError || !profile) {
+  if (!profile) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
