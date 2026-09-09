@@ -1,0 +1,14 @@
+name: Recurring Bill Generator
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  generate-bills:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Recurring Billing
+        run: |
+          curl -X GET "https://spo.krakataumedia.com/api/billing/recurring" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
