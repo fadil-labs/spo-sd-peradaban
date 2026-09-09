@@ -687,7 +687,26 @@ export async function importStudentsAction(formData: FormData) {
 
         let profileId: string | null = null;
 
-        if (trimmedPhone) {
+        if (trimmedName) {
+          const { data: nameProfile } = await adminSupabase
+            .from("profiles")
+            .select("id, phone")
+            .eq("school_id", schoolId)
+            .eq("full_name", trimmedName)
+            .maybeSingle();
+
+          if (nameProfile?.id) {
+            profileId = nameProfile.id;
+            if (trimmedPhone && !nameProfile.phone) {
+              await adminSupabase
+                .from("profiles")
+                .update({ phone: trimmedPhone })
+                .eq("id", nameProfile.id);
+            }
+          }
+        }
+
+        if (!profileId && trimmedPhone) {
           const { data: phoneProfile } = await adminSupabase
             .from("profiles")
             .select("id, full_name")
@@ -705,35 +724,7 @@ export async function importStudentsAction(formData: FormData) {
                 .eq("id", phoneProfile.id);
             } else if (existingName === trimmedName) {
               profileId = phoneProfile.id;
-            } else {
-              const { data: nameProfile } = await adminSupabase
-                .from("profiles")
-                .select("id")
-                .eq("school_id", schoolId)
-                .eq("full_name", trimmedName)
-                .maybeSingle();
-
-              if (nameProfile?.id) {
-                profileId = nameProfile.id;
-                await adminSupabase
-                  .from("profiles")
-                  .update({ phone: trimmedPhone || null })
-                  .eq("id", nameProfile.id);
-              }
             }
-          }
-        }
-
-        if (!profileId && trimmedName) {
-          const { data: nameProfile } = await adminSupabase
-            .from("profiles")
-            .select("id")
-            .eq("school_id", schoolId)
-            .eq("full_name", trimmedName)
-            .maybeSingle();
-
-          if (nameProfile?.id) {
-            profileId = nameProfile.id;
           }
         }
 
@@ -775,7 +766,6 @@ export async function importStudentsAction(formData: FormData) {
 
             const existingAuthUser = usersData?.users?.find((u) => u.email === email);
             if (existingAuthUser?.id) {
-              email = existingAuthUser.email || email;
               const { data: existingProfile } = await adminSupabase
                 .from("profiles")
                 .select("full_name")
@@ -783,15 +773,25 @@ export async function importStudentsAction(formData: FormData) {
                 .maybeSingle();
 
               const existingName = String(existingProfile?.full_name || "").trim();
-              if (existingName && existingName !== trimmedName) {
-                await adminSupabase
-                  .from("profiles")
-                  .update({ full_name: trimmedName })
-                  .eq("id", existingAuthUser.id);
-
+              if (!existingName || existingName === trimmedName) {
                 authUserId = existingAuthUser.id;
               } else {
-                authUserId = existingAuthUser.id;
+                const suffix = roleLabel === "ibu" ? "_ibu" : "_ayah";
+                email = studentNis ? `${studentNis}${suffix}@sekolah.id` : `${roleLabel}_${finalStudentId}@placeholder.local`;
+
+                const { data: altAuthData, error: altAuthError } = await adminSupabase.auth.admin.createUser({
+                  email,
+                  password: Math.random().toString(36).slice(2),
+                  email_confirm: true,
+                  user_metadata: { full_name: trimmedName },
+                });
+
+                if (altAuthError || !altAuthData?.user) {
+                  console.error(`Failed to create alternative ${roleLabel} account`, altAuthError);
+                  return null;
+                }
+
+                authUserId = altAuthData.user.id;
               }
             }
           }
