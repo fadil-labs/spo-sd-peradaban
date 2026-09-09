@@ -699,6 +699,12 @@ export async function importStudentsAction(formData: FormData) {
             const existingName = String(phoneProfile.full_name || "").trim();
             if (!existingName || existingName === trimmedName) {
               profileId = phoneProfile.id;
+            } else {
+              profileId = phoneProfile.id;
+              await adminSupabase
+                .from("profiles")
+                .update({ full_name: trimmedName })
+                .eq("id", phoneProfile.id);
             }
           }
         }
@@ -754,6 +760,7 @@ export async function importStudentsAction(formData: FormData) {
 
             const existingAuthUser = usersData?.users?.find((u) => u.email === email);
             if (existingAuthUser?.id) {
+              email = existingAuthUser.email || email;
               const { data: existingProfile } = await adminSupabase
                 .from("profiles")
                 .select("full_name")
@@ -762,21 +769,12 @@ export async function importStudentsAction(formData: FormData) {
 
               const existingName = String(existingProfile?.full_name || "").trim();
               if (existingName && existingName !== trimmedName) {
-                email = studentNis ? `${studentNis}_${roleLabel}@sekolah.id` : `${roleLabel}_${finalStudentId}@placeholder.local`;
+                await adminSupabase
+                  .from("profiles")
+                  .update({ full_name: trimmedName })
+                  .eq("id", existingAuthUser.id);
 
-                const { data: altAuthData, error: altAuthError } = await adminSupabase.auth.admin.createUser({
-                  email,
-                  password: Math.random().toString(36).slice(2),
-                  email_confirm: true,
-                  user_metadata: { full_name: trimmedName },
-                });
-
-                if (altAuthError || !altAuthData?.user) {
-                  console.error(`Failed to create alternative ${roleLabel} account`, altAuthError);
-                  return null;
-                }
-
-                authUserId = altAuthData.user.id;
+                authUserId = existingAuthUser.id;
               } else {
                 authUserId = existingAuthUser.id;
               }
