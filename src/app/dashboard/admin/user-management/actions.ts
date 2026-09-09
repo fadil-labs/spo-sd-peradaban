@@ -121,7 +121,7 @@ export async function resetUserPasswordAction(userId: string) {
     return { error: "Gagal mereset password pengguna." };
   }
 
-  const { error: profileUpdateError } = await supabase
+  const { error: profileUpdateError } = await adminSupabase
     .from("profiles")
     .update({ must_change_password: true })
     .eq("id", userId);

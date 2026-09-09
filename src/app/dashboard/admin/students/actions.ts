@@ -697,14 +697,29 @@ export async function importStudentsAction(formData: FormData) {
 
           if (phoneProfile?.id) {
             const existingName = String(phoneProfile.full_name || "").trim();
-            if (!existingName || existingName === trimmedName) {
-              profileId = phoneProfile.id;
-            } else {
+            if (!existingName) {
               profileId = phoneProfile.id;
               await adminSupabase
                 .from("profiles")
                 .update({ full_name: trimmedName })
                 .eq("id", phoneProfile.id);
+            } else if (existingName === trimmedName) {
+              profileId = phoneProfile.id;
+            } else {
+              const { data: nameProfile } = await adminSupabase
+                .from("profiles")
+                .select("id")
+                .eq("school_id", schoolId)
+                .eq("full_name", trimmedName)
+                .maybeSingle();
+
+              if (nameProfile?.id) {
+                profileId = nameProfile.id;
+                await adminSupabase
+                  .from("profiles")
+                  .update({ phone: trimmedPhone || null })
+                  .eq("id", nameProfile.id);
+              }
             }
           }
         }
