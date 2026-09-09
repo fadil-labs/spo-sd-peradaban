@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { recordFinancialAuditEvent } from "@/lib/financial-audit/actions";
 import { createNotification } from "@/lib/notifications/service";
+import { sendNewBillNotification as sendNewBillEmail } from "@/lib/notifications/email";
+import { sendNewBillNotification as sendNewBillWhatsApp } from "@/lib/notifications/whatsapp";
 
 export async function getStudentBillsAction(searchQuery?: string, statusFilter?: string, page?: number, pageSize?: number) {
   const supabase = await createClient();
@@ -275,7 +277,7 @@ export async function createStudentBillAction(formData: FormData) {
 
   const { data: category, error: categoryError } = await supabase
     .from("payment_categories")
-    .select("school_id, allow_installments, minimum_installment_amount")
+    .select("school_id, allow_installments, minimum_installment_amount, name")
     .eq("id", paymentCategoryId)
     .single();
 
@@ -396,6 +398,20 @@ export async function createStudentBillAction(formData: FormData) {
         console.error("Failed to create notification for guardian", relation.guardian_profile_id, notificationResult.error);
       }
     }
+
+    const billTitle = category?.name || "Tagihan";
+    const dueDateFormatted = dueDateValue ? new Date(dueDateValue).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "";
+
+    Promise.all([
+      sendNewBillEmail(studentId, billTitle, amountNum, dueDateFormatted).catch((emailError) => {
+        console.error("[Email] Failed to send bill notification:", emailError);
+      }),
+      sendNewBillWhatsApp(studentId, billTitle, amountNum, dueDateFormatted).catch((whatsappError) => {
+        console.error("[WhatsApp] Failed to send bill notification:", whatsappError);
+      }),
+    ]).catch((error) => {
+      console.error("[Notification] Failed to send external notifications:", error);
+    });
   }
 
   if (typeof window !== "undefined") {
