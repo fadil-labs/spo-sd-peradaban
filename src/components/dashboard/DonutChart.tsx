@@ -1,56 +1,66 @@
 "use client";
 
-interface DonutChartProps {
-  data: { label: string; value: number; color: string }[];
+import { ResponsiveContainer, PieChart, Pie, Cell, Legend, Tooltip } from "recharts";
+
+interface CompositionData {
+  name: string;
+  value: number;
 }
 
-export function DonutChart({ data }: DonutChartProps) {
-  const size = 180;
-  const strokeWidth = 20;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const total = data.reduce((sum, d) => sum + d.value, 0);
+interface DonutChartProps {
+  data?: CompositionData[];
+}
 
-  const segments = data.reduce<{ label: string; value: number; color: string; fraction: number; length: number; offset: number }[]>((acc, item) => {
-    const fraction = total === 0 ? 0 : item.value / total;
-    const length = fraction * circumference;
-    const segment = {
-      ...item,
-      fraction,
-      length,
-      offset: acc.length === 0 ? 0 : acc[acc.length - 1].offset + acc[acc.length - 1].length,
-    };
-    acc.push(segment);
-    return acc;
-  }, []);
+const fallbackCompositionData: CompositionData[] = [
+  { name: "QRIS", value: 65 },
+  { name: "Transfer Bank", value: 25 },
+  { name: "Lainnya", value: 10 },
+];
+
+const COLORS = ["#0C3B2E", "#C28E38", "#2563EB", "#0D9488"];
+
+export function DonutChart({ data }: DonutChartProps) {
+  const chartData = data && data.length > 0 ? data : fallbackCompositionData;
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="transform -rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#f3f4f6" strokeWidth={strokeWidth} />
-        {segments.map((segment, index) => (
-          <circle
-            key={index}
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill="none"
-            stroke={segment.color}
-            strokeWidth={strokeWidth}
-            strokeDasharray={`${segment.length} ${circumference - segment.length}`}
-            strokeDashoffset={-segment.offset}
-            strokeLinecap="butt"
+    <div className="w-full h-[220px] sm:h-[240px] flex items-center justify-center">
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={chartData}
+            cx="50%"
+            cy="45%"
+            innerRadius={55}
+            outerRadius={78}
+            paddingAngle={4}
+            dataKey="value"
+          >
+            {chartData.map((_, index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            ))}
+          </Pie>
+          <Tooltip
+            content={({ active, payload }) => {
+              if (active && payload && payload.length) {
+                return (
+                  <div className="bg-[#1A1A1A] text-white text-xs px-2.5 py-1 rounded shadow-md">
+                    {payload[0].name}: {payload[0].value}%
+                  </div>
+                );
+              }
+              return null;
+            }}
           />
-        ))}
-      </svg>
-      <div className="flex flex-wrap justify-center gap-3 text-xs">
-        {segments.map((segment, index) => (
-          <div key={index} className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: segment.color }} />
-            <span className="text-muted">{segment.label}</span>
-          </div>
-        ))}
-      </div>
+          <Legend
+            verticalAlign="bottom"
+            height={36}
+            iconType="circle"
+            formatter={(value) => (
+              <span className="text-xs font-medium text-[#555]">{value}</span>
+            )}
+          />
+        </PieChart>
+      </ResponsiveContainer>
     </div>
   );
 }

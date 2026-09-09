@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-export async function getEnrollmentsAction() {
+export async function getEnrollmentsAction(page?: number, pageSize?: number, searchQuery?: string) {
   const supabase = await createClient();
 
   const {
@@ -28,7 +28,12 @@ export async function getEnrollmentsAction() {
     redirect("/dashboard/admin");
   }
 
-  const { data: enrollments, error: enrollmentsError } = await supabase
+  const pageNum = page && page > 0 ? page : 1;
+  const pageSizeNum = pageSize && pageSize > 0 ? Math.min(pageSize, 100) : 20;
+  const from = (pageNum - 1) * pageSizeNum;
+  const to = from + pageSizeNum - 1;
+
+  let query = supabase
     .from("student_enrollments")
     .select(`
       id,
@@ -39,16 +44,23 @@ export async function getEnrollmentsAction() {
       students (id, nis, full_name),
       academic_years (id, name),
       classes (id, name)
-    `)
+    `, { count: "exact" })
     .eq("school_id", profile.school_id)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  if (searchQuery && searchQuery.trim()) {
+    const trimmed = searchQuery.trim();
+    query = query.or(`students.nis.ilike.%${trimmed}%,students.full_name.ilike.%${trimmed}%,classes.name.ilike.%${trimmed}%,academic_years.name.ilike.%${trimmed}%`);
+  }
+
+  const { data: enrollments, error: enrollmentsError, count } = await query;
 
   if (enrollmentsError) {
     return { error: "Gagal memuat data pendaftaran." } as const;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const normalized = (enrollments || []).map((e: any) => ({
+  const normalized = (enrollments || []).map((e) => ({
     id: e.id,
     student_id: e.student_id,
     academic_year_id: e.academic_year_id,
@@ -56,10 +68,10 @@ export async function getEnrollmentsAction() {
     created_at: e.created_at,
     students: Array.isArray(e.students) ? e.students[0] : e.students,
     academic_years: Array.isArray(e.academic_years) ? e.academic_years[0] : e.academic_years,
-    classes: Array.isArray(e.classes) ? (e.classes[0] || null) : e.classes,
+    classes: Array.isArray(e.classes) ? e.classes : (e.classes ? [e.classes] : []),
   }));
 
-  return { enrollments: normalized } as const;
+  return { enrollments: normalized, page: pageNum, pageSize: pageSizeNum, totalRows: count || 0 } as const;
 }
 
 export async function createEnrollmentAction(formData: FormData) {
@@ -232,3 +244,62 @@ export async function updateEnrollmentAction(formData: FormData) {
 
   return { success: true };
 }
+
+export async function deleteEnrollmentAction(formData: FormData) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("school_id, role")
+    .eq("id", user.id)
+    .single();
+
+  if (profileError || !profile) {
+    redirect("/login");
+  }
+
+  if (!["admin", "bendahara"].includes(profile.role)) {
+    redirect("/dashboard/admin");
+  }
+
+  const id = String(formData.get("id") || "").trim();
+
+  if (!id) {
+    return { error: "ID pendaftaran tidak valid." };
+  }
+
+  const { data: existing, error: existingError } = await supabase
+    .from("student_enrollments")
+    .select("school_id")
+    .eq("id", id)
+    .single();
+
+  if (existingError || !existing) {
+    return { error: "Pendaftaran tidak ditemukan." };
+  }
+
+  if (existing.school_id !== profile.school_id) {
+    return { error: "Pendaftaran tidak berada di sekolah yang sama." };
+  }
+
+  const { error } = await supabase
+    .from("student_enrollments")
+    .delete()
+    .eq("id", id)
+    .eq("school_id", profile.school_id);
+
+  if (error) {
+    return { error: "Gagal menghapus pendaftaran. Silakan coba lagi." };
+  }
+
+  return { success: true };
+}
+

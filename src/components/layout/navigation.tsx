@@ -1,4 +1,4 @@
-import { type LucideIcon, LayoutDashboard, Users, UserCheck, School, GraduationCap, Receipt, FileCheck, CreditCard, Tag, Landmark, BarChart3, Bell, ScrollText, Settings, UserCog } from "lucide-react";
+import { type LucideIcon, LayoutDashboard, Users, UserCheck, School, GraduationCap, Receipt, FileCheck, CreditCard, Tag, Landmark, BarChart3, Bell, ScrollText, Settings, UserCog, Wand2 } from "lucide-react";
 
 export type Profile = {
   id: string;
@@ -35,6 +35,7 @@ const adminGroups: NavGroup[] = [
       { label: "Classes", href: "/dashboard/admin/classes", icon: School },
       { label: "Academic Years", href: "/dashboard/admin/academic-years", icon: GraduationCap },
       { label: "Enrollments", href: "/dashboard/admin/enrollments", icon: Users },
+      { label: "Setup Akademik", href: "/dashboard/admin/academic-setup", icon: Wand2 },
     ],
   },
   {
@@ -45,6 +46,7 @@ const adminGroups: NavGroup[] = [
       { label: "Payment Gateway", href: "/dashboard/admin/payment-gateway", icon: CreditCard },
       { label: "Payment Categories", href: "/dashboard/admin/payment-categories", icon: Tag },
       { label: "School Payment Methods", href: "/dashboard/admin/school-payment-methods", icon: Landmark },
+      { label: "Bill Templates", href: "/dashboard/admin/bill-templates", icon: ScrollText },
       { label: "Financial Reports", href: "/dashboard/admin/financial-reports", icon: BarChart3 },
     ],
   },

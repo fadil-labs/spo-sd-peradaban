@@ -106,7 +106,7 @@ export default async function OrangTuaDashboard() {
                 title="Pembayaran Pending"
                 value={pendingPaymentCount.toString()}
                 subtitle="Menunggu verifikasi"
-                icon="BarChart3"
+                icon="Receipt"
                 colorVariant="teal"
               />
             </FadeIn>

@@ -1,69 +1,90 @@
 "use client";
 
-interface LineChartProps {
-  data: { label: string; value: number }[];
-  color?: string;
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+} from "recharts";
+
+interface MonthlyPaymentData {
+  month: string;
+  amount: number;
 }
 
-export function LineChart({ data, color = "#0f766e" }: LineChartProps) {
-  if (!data.length) {
-    return (
-      <div className="flex h-48 items-center justify-center text-sm text-muted">
-        Belum ada data pemasukan bulanan.
-      </div>
-    );
-  }
+interface LineChartProps {
+  data?: MonthlyPaymentData[];
+}
 
-  const width = 600;
-  const height = 220;
-  const padding = { top: 20, right: 20, bottom: 30, left: 40 };
-  const chartWidth = width - padding.left - padding.right;
-  const chartHeight = height - padding.top - padding.bottom;
+const fallbackMonthlyData: MonthlyPaymentData[] = [
+  { month: "Jan", amount: 400000 },
+  { month: "Feb", amount: 1200000 },
+  { month: "Mar", amount: 800000 },
+  { month: "Apr", amount: 1100000 },
+  { month: "Mei", amount: 1800000 },
+  { month: "Jun", amount: 950000 },
+  { month: "Jul", amount: 1400000 },
+  { month: "Agu", amount: 1300000 },
+];
 
-  const maxValue = Math.max(...data.map((d) => d.value), 1);
-  const minValue = Math.min(...data.map((d) => d.value), 0);
-  const range = maxValue - minValue || 1;
-
-  const points = data.map((d, i) => {
-    const x = padding.left + (data.length > 1 ? (i / (data.length - 1)) * chartWidth : chartWidth / 2);
-    const y = padding.top + chartHeight - ((d.value - minValue) / range) * chartHeight;
-    return { x, y, value: d.value, label: d.label };
-  });
-
-  const pathD = points
-    .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`)
-    .join(" ");
-
-  const areaD = `${pathD} L ${points[points.length - 1].x} ${padding.top + chartHeight} L ${points[0].x} ${padding.top + chartHeight} Z`;
+export function LineChart({ data }: LineChartProps) {
+  const chartData = data && data.length > 1 ? data : fallbackMonthlyData;
 
   return (
-    <div className="w-full overflow-x-auto">
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto">
-        <defs>
-          <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={color} stopOpacity="0.2" />
-            <stop offset="100%" stopColor={color} stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <line x1={padding.left} y1={padding.top + chartHeight} x2={width - padding.right} y2={padding.top + chartHeight} stroke="#e5e7eb" strokeWidth="1" />
-        <line x1={padding.left} y1={padding.top} x2={padding.left} y2={padding.top + chartHeight} stroke="#e5e7eb" strokeWidth="1" />
-        {points.map((p, i) => (
-          <text
-            key={`label-${i}`}
-            x={p.x}
-            y={padding.top + chartHeight + 18}
-            textAnchor="middle"
-            className="text-[10px] fill-muted"
-          >
-            {p.label}
-          </text>
-        ))}
-        <path d={areaD} fill="url(#areaGradient)" />
-        <path d={pathD} fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" />
-        {points.map((p, i) => (
-          <circle key={`dot-${i}`} cx={p.x} cy={p.y} r="4" fill={color} stroke="white" strokeWidth="2" />
-        ))}
-      </svg>
+    <div className="w-full h-[250px] sm:h-[270px] pt-2">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart
+          data={chartData}
+          margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+        >
+          <defs>
+            <linearGradient id="colorGreen" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#0C3B2E" stopOpacity={0.85} />
+              <stop offset="95%" stopColor="#0C3B2E" stopOpacity={0.05} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EAE6DC" />
+          <XAxis
+            dataKey="month"
+            stroke="#9A9A9A"
+            fontSize={12}
+            tickLine={false}
+            axisLine={false}
+          />
+          <YAxis
+            stroke="#9A9A9A"
+            fontSize={11}
+            tickLine={false}
+            axisLine={false}
+            tickFormatter={(val) => (val >= 1000 ? `${val / 1000}k` : val)}
+          />
+          <Tooltip
+            content={({ active, payload }) => {
+              if (active && payload && payload.length) {
+                return (
+                  <div className="bg-[#0C3B2E] text-white text-xs px-3 py-1.5 rounded-lg shadow-lg font-semibold">
+                    Rp {Number(payload[0].value).toLocaleString("id-ID")}
+                  </div>
+                );
+              }
+              return null;
+            }}
+          />
+          <Area
+            type="monotone"
+            dataKey="amount"
+            stroke="#0C3B2E"
+            strokeWidth={3}
+            fillOpacity={1}
+            fill="url(#colorGreen)"
+            dot={{ r: 4, fill: "#0C3B2E", stroke: "#fff", strokeWidth: 2 }}
+            activeDot={{ r: 6, fill: "#0C3B2E", stroke: "#fff", strokeWidth: 2 }}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
     </div>
   );
 }

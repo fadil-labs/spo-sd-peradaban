@@ -522,7 +522,7 @@ export async function uploadPaymentProofAction(paymentId: string, file: File) {
 
   const { data: payment, error: paymentError } = await supabase
     .from("payments")
-    .select("id, school_id, student_id, student_bill_id")
+    .select("id, school_id, student_id, student_bill_id, amount")
     .eq("id", paymentId)
     .single();
 
@@ -602,7 +602,7 @@ export async function uploadPaymentProofAction(paymentId: string, file: File) {
          recipientProfileId: admin.id,
          notificationType: "payment_proof_submitted",
          title: "Bukti Pembayaran Baru",
-         message: `Ada bukti pembayaran baru untuk tagihan Rp${amount.toLocaleString("id-ID")} yang menunggu verifikasi.`,
+          message: `Ada bukti pembayaran baru untuk tagihan Rp${payment.amount.toLocaleString("id-ID")} yang menunggu verifikasi.`,
          schoolId: profile.school_id,
          entityType: "payment_proof",
          entityId: paymentId,

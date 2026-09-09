@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/operational/PageHeader";
 import { Card } from "@/components/ui/card";
 import { DataTable } from "@/components/operational/data-table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
+import { SearchInput } from "@/components/operational/search-input";
 import { useToast } from "@/components/ui/toast";
 import { getUsersAction, resetUserPasswordAction, toggleUserStatusAction } from "./actions";
 import { RefreshCw, Key, UserCheck, UserX } from "lucide-react";
@@ -33,17 +34,33 @@ export default function UserManagementPage() {
   const [error, setError] = useState<string | null>(null);
   const [isResetting, setIsResetting] = useState<string | null>(null);
   const [credentialModal, setCredentialModal] = useState<CredentialModal | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalRows, setTotalRows] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const pageRef = useRef(page);
+  const searchRef = useRef(searchQuery);
+
+  useEffect(() => {
+    pageRef.current = page;
+  }, [page]);
+
+  useEffect(() => {
+    searchRef.current = searchQuery;
+  }, [searchQuery]);
 
   const toast = useToast();
 
-  const loadUsers = useCallback(async () => {
+  const loadUsers = useCallback(async (pageNum?: number) => {
     setIsLoading(true);
     setError(null);
-    const result = await getUsersAction();
+    const result = await getUsersAction(pageNum || pageRef.current, 20, searchRef.current || undefined);
     if ("error" in result) {
       setError(result.error as string);
     } else {
       setUsers(result.users as User[]);
+      setTotalRows(result.totalRows);
+      if (pageNum) setPage(pageNum);
     }
     setIsLoading(false);
   }, []);
@@ -116,7 +133,15 @@ export default function UserManagementPage() {
     {
       key: "email",
       header: "Email",
-      render: (item: User) => item.email,
+      render: (item: User) => {
+        const isPlaceholder = item.email?.includes("@placeholder.local");
+        return (
+          <span className={isPlaceholder ? "text-warning" : ""}>
+            {item.email || "-"}
+            {isPlaceholder && <span className="ml-2 text-[10px] text-warning/80">(placeholder)</span>}
+          </span>
+        );
+      },
     },
     {
       key: "role",
@@ -193,6 +218,17 @@ export default function UserManagementPage() {
           }}
         />
 
+        <div className="flex items-center gap-4">
+          <SearchInput
+            value={searchQuery}
+            onChange={(value) => {
+              setSearchQuery(value);
+              setPage(1);
+            }}
+            placeholder="Cari nama, email, atau username..."
+          />
+        </div>
+
         {error && (
           <div className="rounded-md border border-danger/20 bg-danger/10 px-4 py-3">
             <p className="text-sm text-danger">{error}</p>
@@ -246,6 +282,33 @@ export default function UserManagementPage() {
               </svg>
             }
           />
+        )}
+
+        {totalRows > 20 && !isLoading && (
+          <div className="flex items-center justify-between">
+            <div className="text-xs text-muted">
+              Menampilkan {(page - 1) * 20 + 1} - {Math.min(page * 20, totalRows)} dari {totalRows} data
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="h-8 px-3 rounded-md border border-border bg-surface text-xs font-semibold hover:bg-muted/10 transition-colors disabled:opacity-50"
+              >
+                Sebelumnya
+              </button>
+              <span className="text-xs text-muted">Halaman {page} dari {Math.max(1, Math.ceil(totalRows / 20))}</span>
+              <button
+                type="button"
+                onClick={() => setPage((p) => p + 1)}
+                disabled={page >= Math.ceil(totalRows / 20)}
+                className="h-8 px-3 rounded-md border border-border bg-surface text-xs font-semibold hover:bg-muted/10 transition-colors disabled:opacity-50"
+              >
+                Selanjutnya
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </PageContainer>

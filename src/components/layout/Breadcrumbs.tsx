@@ -19,6 +19,7 @@ const LABELS: Record<string, string> = {
   "payment-gateway": "Payment Gateway",
   "payment-categories": "Payment Categories",
   "school-payment-methods": "School Payment Methods",
+  "bill-templates": "Bill Templates",
   "financial-reports": "Financial Reports",
   notifications: "Notifications",
   "financial-audit-logs": "Audit Logs",

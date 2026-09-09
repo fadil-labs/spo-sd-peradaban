@@ -1,70 +1,113 @@
 "use client";
 
-import { type LucideIcon, Users, Receipt, CreditCard, FileCheck, BarChart3 } from "lucide-react";
-import { motion } from "motion/react";
+import React from "react";
+import { Receipt, Users, FileCheck, CreditCard } from "lucide-react";
 
-const iconMap: Record<string, LucideIcon> = {
-  Users,
-  Receipt,
-  CreditCard,
-  FileCheck,
-  BarChart3,
-};
-
-const colorMap: Record<string, { bg: string; text: string; iconBg: string }> = {
-  green: { bg: "bg-white", text: "text-emerald-600", iconBg: "bg-emerald-600" },
-  yellow: { bg: "bg-white", text: "text-amber-600", iconBg: "bg-amber-500" },
-  blue: { bg: "bg-white", text: "text-sky-600", iconBg: "bg-sky-500" },
-  teal: { bg: "bg-white", text: "text-teal-600", iconBg: "bg-teal-600" },
-};
-
-export type StatItem = {
+interface StatCardProps {
   title: string;
   value: string;
-  subtitle: string;
-  icon: string;
+  subtitle?: string;
+  icon: "Receipt" | "Users" | "FileCheck" | "CreditCard";
+  colorVariant?: "green" | "yellow" | "blue" | "teal";
   trend?: {
     value: string;
     positive: boolean;
   };
-  href?: string;
   accent?: boolean;
-  colorVariant?: "green" | "yellow" | "blue" | "teal";
+}
+
+const iconMap = {
+  Receipt,
+  Users,
+  FileCheck,
+  CreditCard,
 };
 
-export function StatCard({ title, value, subtitle, icon, trend, href, accent, colorVariant = "green" }: StatItem) {
-  const Icon = iconMap[icon] || Receipt;
-  const colors = colorMap[colorVariant] || colorMap.green;
-  const Card = href ? motion.a : motion.div;
+const colorStyles = {
+  green: {
+    bgIcon: "bg-[#0C3B2E]/10 text-[#0C3B2E]",
+    trendText: "text-[#0C3B2E]",
+    stroke: "#0C3B2E",
+  },
+  yellow: {
+    bgIcon: "bg-[#C28E38]/15 text-[#C28E38]",
+    trendText: "text-[#C28E38]",
+    stroke: "#C28E38",
+  },
+  blue: {
+    bgIcon: "bg-blue-500/10 text-blue-600",
+    trendText: "text-blue-600",
+    stroke: "#2563EB",
+  },
+  teal: {
+    bgIcon: "bg-teal-500/10 text-teal-600",
+    trendText: "text-teal-600",
+    stroke: "#0D9488",
+  },
+};
+
+export function StatCard({
+  title,
+  value,
+  subtitle,
+  icon,
+  colorVariant = "green",
+  trend,
+  accent = false,
+}: StatCardProps) {
+  const IconComponent = iconMap[icon] || Receipt;
+  const style = colorStyles[colorVariant];
 
   return (
-    <Card
-      href={href}
-      whileHover={{ y: -4 }}
-      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      className={[
-        "group relative overflow-hidden rounded-2xl border border-border bg-white p-5 shadow-sm transition-all hover:shadow-lg",
-        accent ? "border-l-4 border-l-gold" : "",
-      ].join(" ")}
+    <div
+      className={`rounded-[20px] border border-[#E5E0D8] bg-white p-4 sm:p-5 shadow-[0_2px_10px_rgba(0,0,0,0.02)] transition-all hover:shadow-md h-full flex flex-col justify-between ${
+        accent ? "border-l-4 border-l-[#0C3B2E]" : ""
+      }`}
     >
-      <div className="flex items-start justify-between">
-        <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${colors.iconBg} text-white shadow-sm`}>
-          <Icon className="h-6 w-6" />
+      {/* Baris Atas: Icon & Sparkline / Trend */}
+      <div className="flex items-start justify-between mb-3">
+        <div className={`p-2.5 rounded-xl ${style.bgIcon}`}>
+          <IconComponent className="h-5 w-5 stroke-[2.2]" />
         </div>
-        {trend && (
-          <div className="flex items-center gap-1 text-xs font-medium text-emerald-600">
-            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-            </svg>
-            <span>{trend.value}</span>
-          </div>
+
+        <div className="flex items-center gap-2">
+          {/* Sparkline Graphic Mini */}
+          <svg className="w-12 h-6" viewBox="0 0 50 20" fill="none">
+            <path
+              d={
+                trend?.positive ?? true
+                  ? "M2 16 Q 15 4, 25 12 T 48 4"
+                  : "M2 4 Q 15 16, 25 8 T 48 16"
+              }
+              fill="none"
+              stroke={style.stroke}
+              strokeWidth="2.5"
+              strokeLinecap="round"
+            />
+          </svg>
+
+          {trend && (
+            <span
+              className={`text-xs font-bold flex items-center gap-0.5 ${style.trendText}`}
+            >
+              {trend.positive ? "↗" : "↘"} {trend.value}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Baris Bawah: Titile, Value, Subtitle */}
+      <div>
+        <p className="text-xs font-medium text-[#7A7A7A] mb-0.5">{title}</p>
+        <h3 className="text-xl sm:text-2xl font-extrabold text-[#1A1A1A] tracking-tight">
+          {value}
+        </h3>
+        {subtitle && (
+          <p className="text-[11px] font-medium text-[#A0A0A0] mt-1">
+            {subtitle}
+          </p>
         )}
       </div>
-      <div className="mt-4">
-        <p className="text-xs text-muted font-medium">{title}</p>
-        <p className="text-2xl font-bold text-foreground tracking-tight mt-1">{value}</p>
-        <p className="text-xs text-muted mt-1">{subtitle}</p>
-      </div>
-    </Card>
+    </div>
   );
 }

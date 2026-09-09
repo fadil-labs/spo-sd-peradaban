@@ -56,7 +56,7 @@ export async function getBendaharaDashboardSummaryAction(): Promise<BendaharaDas
     supabase.from("student_bills").select("id, amount, status", { count: "exact" }).eq("school_id", profile.school_id),
     supabase
       .from("payments")
-      .select("id, amount, status, student_bill_id, payment_methods (name)", { count: "exact" })
+      .select("id, amount, status, student_bill_id, payment_date, payment_methods (name)", { count: "exact" })
       .not("student_bill_id", "is", null)
       .in("status", ["completed", "pending"]),
     supabase
@@ -120,7 +120,8 @@ export async function getBendaharaDashboardSummaryAction(): Promise<BendaharaDas
     const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
     monthlyMap.set(key, (monthlyMap.get(key) || 0) + (payment.amount || 0));
 
-    const methodName = payment.payment_methods?.name || "Lainnya";
+    const paymentMethod = Array.isArray(payment.payment_methods) ? payment.payment_methods[0] : payment.payment_methods;
+    const methodName = paymentMethod?.name || "Lainnya";
     if (!methodMap.has(methodName)) {
       methodMap.set(methodName, { value: 0, color: methodColors[methodName] || "#6b7280" });
     }

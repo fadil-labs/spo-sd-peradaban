@@ -12,7 +12,7 @@ function generateTemporaryPassword(): string {
   return `${prefix}${segments.join("")}`.slice(0, 12);
 }
 
-export async function getUsersAction() {
+export async function getUsersAction(page?: number, pageSize?: number, searchQuery?: string) {
   const supabase = await createClient();
 
   const {
@@ -37,17 +37,30 @@ export async function getUsersAction() {
     redirect("/dashboard/admin");
   }
 
-  const { data: users, error: usersError } = await supabase
+  const pageNum = page && page > 0 ? page : 1;
+  const pageSizeNum = pageSize && pageSize > 0 ? Math.min(pageSize, 100) : 20;
+  const from = (pageNum - 1) * pageSizeNum;
+  const to = from + pageSizeNum - 1;
+
+  let query = supabase
     .from("profiles")
-    .select("id, full_name, email, username, role, phone, is_active, must_change_password, created_at, updated_at")
+    .select("id, full_name, email, username, role, phone, is_active, must_change_password, created_at, updated_at", { count: "exact" })
     .eq("school_id", profile.school_id)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  if (searchQuery && searchQuery.trim()) {
+    const trimmed = searchQuery.trim();
+    query = query.or(`full_name.ilike.%${trimmed}%,email.ilike.%${trimmed}%,username.ilike.%${trimmed}%`);
+  }
+
+  const { data: users, error: usersError, count } = await query;
 
   if (usersError) {
     return { error: "Gagal memuat data pengguna." };
   }
 
-  return { users: users || [] };
+  return { users: users || [], page: pageNum, pageSize: pageSizeNum, totalRows: count || 0 };
 }
 
 export async function resetUserPasswordAction(userId: string) {

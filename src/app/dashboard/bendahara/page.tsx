@@ -34,6 +34,9 @@ export default async function BendaharaDashboard() {
 
   const summary = summaryResult.summary;
 
+  const monthlyPayments = (summary.monthlyPayments ?? []).map((item) => ({ month: item.label, amount: item.value }));
+  const paymentComposition = (summary.paymentComposition ?? []).map((item) => ({ name: item.label, value: item.value, color: item.color }));
+
   const attentionItems = [
     ...(summary.pendingProofCount > 0
       ? [
@@ -87,7 +90,7 @@ export default async function BendaharaDashboard() {
                 title="Pembayaran Pending"
                 value={summary.pendingPaymentCount.toString()}
                 subtitle={formatCurrency(summary.pendingPaymentAmount)}
-                icon="BarChart3"
+                icon="Receipt"
                 colorVariant="green"
               />
             </FadeIn>
@@ -119,7 +122,7 @@ export default async function BendaharaDashboard() {
                       <span>Ttoton</span>
                     </div>
                   </div>
-                  <LineChart data={summary.monthlyPayments} />
+                   <LineChart data={monthlyPayments} />
                 </div>
               </FadeIn>
             </div>
@@ -128,7 +131,7 @@ export default async function BendaharaDashboard() {
                 <div className="rounded-2xl border border-border bg-white p-4 shadow-sm">
                   <h3 className="text-base font-semibold text-foreground mb-1">Komposisi Pembayaran</h3>
                   <p className="text-xs text-muted mb-4">Berdasarkan metode pembayaran</p>
-                  <DonutChart data={summary.paymentComposition} />
+                   <DonutChart data={paymentComposition} />
                 </div>
               </FadeIn>
               <FadeIn delay={0.6} className="h-full">
