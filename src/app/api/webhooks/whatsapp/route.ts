@@ -7,11 +7,11 @@ export async function GET(req: Request) {
   const token = url.searchParams.get("hub.verify_token");
   const challenge = url.searchParams.get("hub.challenge");
 
-  if (mode === "subscribe" && token === process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN) {
-    return NextResponse.json({ status: "success", challenge }, { status: 200 });
+  if (mode === "subscribe" && token && token === process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN) {
+    return new Response(challenge || "", { status: 200, headers: { "Content-Type": "text/plain" } });
   }
 
-  return NextResponse.json({ status: "error", message: "Verification failed" }, { status: 403 });
+  return new Response("Verification failed", { status: 403 });
 }
 
 export async function POST(req: Request) {
