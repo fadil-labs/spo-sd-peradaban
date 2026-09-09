@@ -1,8 +1,7 @@
 name: Recurring Bill Generator
-
 on:
   schedule:
-    - cron: "0 0 * * *"
+    - cron: '0 0 * * *'
   workflow_dispatch:
 
 jobs:
@@ -11,5 +10,5 @@ jobs:
     steps:
       - name: Trigger Recurring Billing
         run: |
-          curl -X GET "${{ secrets.VERCEL_URL }}/api/billing/recurring" \
+          curl -X GET "https://spo.krakataumedia.com/api/billing/recurring" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
