@@ -1,6 +1,17 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+async function verifyWebhookSignature(body: string, signature: string | null, secret: string): Promise<boolean> {
+  if (!signature || !secret) return false;
+  const encoder = new TextEncoder();
+  const key = encoder.encode(secret);
+  const data = encoder.encode(body);
+  const cryptoKey = await crypto.subtle.importKey("raw", key, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const signatureBuffer = await crypto.subtle.sign("HMAC", cryptoKey, data);
+  const expectedSignature = Array.from(new Uint8Array(signatureBuffer)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  return signature === `sha256=${expectedSignature}`;
+}
+
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const mode = url.searchParams.get("hub.mode");
@@ -16,26 +27,18 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const rawBody = await req.text();
+    const signature = req.headers.get("x-hub-signature-256");
+    const verifyToken = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || "";
+
+    if (!verifyWebhookSignature(rawBody, signature, verifyToken)) {
+      return NextResponse.json({ status: "error", message: "Invalid signature" }, { status: 403 });
+    }
+
+    const body = JSON.parse(rawBody);
     console.log("[WhatsApp Webhook] Received:", JSON.stringify(body, null, 2));
 
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ status: "error", message: "Unauthorized" }, { status: 401 });
-    }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("school_id, role")
-      .eq("id", user.id)
-      .single();
-
-    if (!profile || !["admin", "bendahara"].includes(profile.role)) {
-      return NextResponse.json({ status: "error", message: "Forbidden" }, { status: 403 });
-    }
-
     const entries = body.entry || [];
     const changes = entries.flatMap((entry: any) => entry.changes || []);
     const value = changes.find((change: any) => change.field === "messages")?.value;
