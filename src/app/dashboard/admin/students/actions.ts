@@ -568,16 +568,32 @@ export async function importStudentsAction(formData: FormData) {
   let updatedCount = 0;
 
   if (upserts.length > 0) {
-    const { data: existingStudents, error: existingError } = await supabase
-      .from("students")
-      .select("nis, nisn, id")
-      .eq("school_id", profile.school_id)
-      .or(`nis.in.(${upserts.map((u) => `"${u.nis}"`).join(",")})${allNisnValues.length > 0 ? `,nisn.in.(${allNisnValues.map((n) => `"${n}"`).join(",")})` : ""}`);
+    const nisValues = upserts.map((u) => u.nis);
+    const nisnValues = allNisnValues;
 
-    if (existingError) {
-      return { error: `Gagal memeriksa data siswa yang sudah ada: ${existingError.message}` };
+    const [existingByNisResult, existingByNisnResult] = await Promise.all([
+      supabase
+        .from("students")
+        .select("nis, nisn, id")
+        .eq("school_id", profile.school_id)
+        .in("nis", nisValues),
+      nisnValues.length > 0
+        ? supabase
+            .from("students")
+            .select("nis, nisn, id")
+            .eq("school_id", profile.school_id)
+            .in("nisn", nisnValues)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+
+    if (existingByNisResult.error) {
+      return { error: `Gagal memeriksa data siswa yang sudah ada: ${existingByNisResult.error.message}` };
+    }
+    if (existingByNisnResult.error) {
+      return { error: `Gagal memeriksa data siswa yang sudah ada: ${existingByNisnResult.error.message}` };
     }
 
+    const existingStudents = [...(existingByNisResult.data || []), ...(existingByNisnResult.data || [])];
     const existingByNis = new Map((existingStudents || []).map((s) => [s.nis, s]));
     const existingByNisn = new Map((existingStudents || []).filter((s) => s.nisn).map((s) => [s.nisn, s]));
 
