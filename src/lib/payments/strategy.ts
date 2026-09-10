@@ -1,10 +1,11 @@
 import { PaymentProvider, PaymentMethodType, PaymentProviderAdapter } from './types';
 import { getProviderCapability, isMethodSupported, getActiveProviders } from './registry';
 import { MockPaymentProvider } from './providers/mock';
+import { MidtransPaymentProvider } from './providers/midtrans';
 
 const providerInstances: Record<PaymentProvider, PaymentProviderAdapter> = {
   mock: new MockPaymentProvider(),
-  midtrans: new MockPaymentProvider(),
+  midtrans: new MidtransPaymentProvider(),
   xendit: new MockPaymentProvider(),
 };
 
