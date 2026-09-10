@@ -417,14 +417,17 @@ export default function PaymentCheckoutClient({ bill: initialBill, payments: ini
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
              <label htmlFor="paymentAmount" className="block text-xs text-muted mb-1.5">Jumlah Pembayaran</label>
-            <input
-              id="paymentAmount"
-              type="number"
-              value={paymentAmount}
-              onChange={(e) => setPaymentAmount(e.target.value)}
-              placeholder={`Maks ${formatCurrency(remaining)}`}
-              className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
+             <input
+               id="paymentAmount"
+               type="number"
+               value={paymentAmount}
+               onChange={(e) => setPaymentAmount(e.target.value)}
+               placeholder={`Maks ${formatCurrency(remaining)}`}
+               className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+               min="1"
+               max={remaining}
+               step="1000"
+             />
           </div>
           <div>
              <label htmlFor="paymentMethod" className="block text-xs text-muted mb-1.5">Metode Pembayaran</label>
@@ -446,33 +449,22 @@ export default function PaymentCheckoutClient({ bill: initialBill, payments: ini
                />
              ) : (
                <>
-                 <select
-                   id="paymentMethod"
-                   value={selectedPaymentMethodId}
-                   onChange={(e) => {
-                     const method = paymentMethods.find(m => m.id === e.target.value);
-                     if (method) {
-                       setSelectedPaymentMethodId(method.id);
-                       setSelectedSchoolPaymentMethodId(method.school_payment_method_id);
-                     }
-                   }}
-                   className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                 >
-                    {Object.entries(METHOD_GROUPS).map(([groupName, methodKeys]) => {
-                      const groupMethods = paymentMethods.filter(m => {
-                        if (!m.name) return false;
-                        return methodKeys.includes(m.name as PaymentMethodType);
-                      });
-                      if (groupMethods.length === 0) return null;
-                      return (
-                        <optgroup key={groupName} label={groupName}>
-                          {groupMethods.map((method) => (
-                            <option key={method.id} value={method.id}>{method.name}</option>
-                          ))}
-                        </optgroup>
-                      );
-                    })}
-                 </select>
+                  <select
+                    id="paymentMethod"
+                    value={selectedPaymentMethodId}
+                    onChange={(e) => {
+                      const method = paymentMethods.find(m => m.id === e.target.value);
+                      if (method) {
+                        setSelectedPaymentMethodId(method.id);
+                        setSelectedSchoolPaymentMethodId(method.school_payment_method_id);
+                      }
+                    }}
+                    className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  >
+                     {paymentMethods.map((method) => (
+                       <option key={method.id} value={method.id}>{method.name}</option>
+                     ))}
+                  </select>
                  {selectedBadge && (
                    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium mt-1.5 ${
                      selectedBadge.variant === 'success' ? 'border-success/20 bg-success/10 text-success' :
