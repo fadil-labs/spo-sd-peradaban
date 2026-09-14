@@ -1,9 +1,10 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { recordFinancialAuditEvent } from "@/lib/financial-audit/actions";
 import { createNotification } from "@/lib/notifications/service";
+import { revalidatePath } from "next/cache";
 
 export async function getPaymentProofsAction(statusFilter?: string) {
   const supabase = await createClient();
@@ -133,6 +134,7 @@ export async function getPaymentProofsAction(statusFilter?: string) {
 
 export async function reviewPaymentProofAction(id: string, status: "approved" | "rejected", rejectionReason?: string) {
   const supabase = await createClient();
+  const supabaseAdmin = await createAdminClient();
 
   const {
     data: { user },
@@ -156,7 +158,7 @@ export async function reviewPaymentProofAction(id: string, status: "approved" | 
     redirect("/dashboard/admin");
   }
 
-  const { data: proof, error: proofError } = await supabase
+  const { data: proof, error: proofError } = await supabaseAdmin
     .from("payment_proofs")
     .select("id, school_id, status, payment_id, uploaded_by")
     .eq("id", id)
@@ -185,7 +187,7 @@ export async function reviewPaymentProofAction(id: string, status: "approved" | 
     updatePayload.rejection_reason = trimmedReason;
   }
 
-  const { data: updatedProof, error: updateError } = await supabase
+  const { data: updatedProof, error: updateError } = await supabaseAdmin
     .from("payment_proofs")
     .update(updatePayload)
     .eq("id", id)
@@ -195,7 +197,18 @@ export async function reviewPaymentProofAction(id: string, status: "approved" | 
     .single();
 
   if (updateError || !updatedProof) {
-    return { error: "Gagal memperbarui status bukti pembayaran." };
+    return { error: `Gagal memperbarui status bukti pembayaran: ${updateError.message}` };
+  }
+
+  if (status === "approved" && proof.payment_id) {
+    const { error: paymentUpdateError } = await supabaseAdmin
+      .from("payments")
+      .update({ status: "completed" })
+      .eq("id", proof.payment_id);
+
+    if (paymentUpdateError) {
+      return { error: `Gagal memperbarui status transaksi pembayaran: ${paymentUpdateError.message}` };
+    }
   }
 
   await recordFinancialAuditEvent({
@@ -227,6 +240,11 @@ export async function reviewPaymentProofAction(id: string, status: "approved" | 
       metadata: status === "rejected" ? { rejection_reason: rejectionReason } : null,
     });
   }
+
+  revalidatePath("/dashboard/admin/payment-proofs");
+  revalidatePath("/dashboard/admin/payments");
+  revalidatePath("/dashboard/orang-tua/payments");
+  revalidatePath("/dashboard/orang-tua/bills", "layout");
 
   return { success: true };
 }
