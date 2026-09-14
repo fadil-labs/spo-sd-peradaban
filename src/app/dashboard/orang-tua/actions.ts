@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { validateFileSignature } from "@/lib/file-security/validate-file-signature";
 import { createParentPaymentIntent } from "@/lib/payment-gateway/service";
 import { PaymentIntentRequest } from "@/lib/payment-gateway/types";
@@ -10,8 +10,10 @@ import { createNotification } from "@/lib/notifications/service";
 import { getAvailableMethods, getActiveProviders } from "@/lib/payments";
 import type { PaymentMethodType } from "@/lib/payments/types";
 
+
 export async function getParentBillsAction(statusFilter?: string) {
   const supabase = await createClient();
+  const supabaseAdmin = await createAdminClient();
 
   const {
     data: { user },
@@ -35,7 +37,7 @@ export async function getParentBillsAction(statusFilter?: string) {
     redirect("/dashboard/orang-tua");
   }
 
-  const { data: guardianRelations, error: guardianError } = await supabase
+  const { data: guardianRelations, error: guardianError } = await supabaseAdmin
     .from("student_guardians")
     .select("student_id")
     .eq("guardian_profile_id", user.id);
@@ -70,8 +72,9 @@ export async function getParentBillsAction(statusFilter?: string) {
       due_date,
       created_at,
       updated_at,
+      installment_plan,
       students (id, nis, full_name),
-      payment_categories (id, name, allow_installments, minimum_installment_amount)
+      payment_categories (id, name, allow_installments, minimum_installment_amount, require_installment_schedule)
     `)
     .in("student_id", studentIds)
     .order("created_at", { ascending: false });
@@ -108,6 +111,7 @@ export async function getParentBillsAction(statusFilter?: string) {
       updated_at: bill.updated_at as string,
       students: Array.isArray(bill.students) ? bill.students[0] : bill.students,
       payment_categories: Array.isArray(bill.payment_categories) ? bill.payment_categories[0] : bill.payment_categories,
+      installment_plan: bill.installment_plan || null,
     };
   });
 
@@ -116,6 +120,7 @@ export async function getParentBillsAction(statusFilter?: string) {
 
 export async function getParentBillDetailAction(id: string) {
   const supabase = await createClient();
+  const supabaseAdmin = await createAdminClient();
 
   const {
     data: { user },
@@ -139,13 +144,20 @@ export async function getParentBillDetailAction(id: string) {
     redirect("/dashboard/orang-tua");
   }
 
-  const { data: guardianRelations, error: guardianError } = await supabase
+  const { data: guardianRelations, error: guardianError } = await supabaseAdmin
     .from("student_guardians")
     .select("student_id")
     .eq("guardian_profile_id", user.id);
 
-  if (guardianError || !guardianRelations || guardianRelations.length === 0) {
-    return { error: "Anda tidak memiliki akses ke tagihan ini." };
+  if (guardianError) {
+    console.error("[getParentBillDetailAction] guardianError:", guardianError);
+    return { error: "Gagal memuat data wali: " + guardianError.message };
+  }
+
+
+  if (!guardianRelations || guardianRelations.length === 0) {
+    console.error("[getParentBillDetailAction] No guardian relations for user:", user.id);
+    return { error: "Anda tidak memiliki relasi wali yang terdaftar." };
   }
 
   const studentIds = guardianRelations.map((g) => g.student_id);
@@ -166,8 +178,9 @@ export async function getParentBillDetailAction(id: string) {
       due_date,
       created_at,
       updated_at,
+      installment_plan,
       students (id, nis, full_name),
-      payment_categories (id, name, allow_installments, minimum_installment_amount)
+      payment_categories (id, name, allow_installments, minimum_installment_amount, require_installment_schedule)
     `)
     .eq("id", id)
     .single();
@@ -176,9 +189,6 @@ export async function getParentBillDetailAction(id: string) {
     return { error: "Tagihan tidak ditemukan." };
   }
 
-  if (!studentIds.includes(bill.student_id)) {
-    return { error: "Anda tidak memiliki akses ke tagihan ini." };
-  }
 
   const { data: payments, error: paymentsError } = await supabase
     .from("payments")
@@ -218,6 +228,7 @@ export async function getParentBillDetailAction(id: string) {
     due_date: bill.due_date,
     created_at: bill.created_at,
     updated_at: bill.updated_at,
+    installment_plan: bill.installment_plan || null,
     students: Array.isArray(bill.students) ? bill.students[0] : bill.students,
     payment_categories: Array.isArray(bill.payment_categories) ? bill.payment_categories[0] : bill.payment_categories,
   };
@@ -248,6 +259,7 @@ export async function getParentBillDetailAction(id: string) {
 
 export async function getParentChildrenAction() {
   const supabase = await createClient();
+  const supabaseAdmin = await createAdminClient();
 
   const {
     data: { user },
@@ -271,7 +283,7 @@ export async function getParentChildrenAction() {
     redirect("/dashboard/orang-tua");
   }
 
-  const { data: guardianRelations, error: guardianError } = await supabase
+  const { data: guardianRelations, error: guardianError } = await supabaseAdmin
     .from("student_guardians")
     .select(`
       student_id,
@@ -328,6 +340,7 @@ export async function processParentPaymentAction(
   idempotencyKey: string
 ) {
   const supabase = await createClient();
+  const supabaseAdmin = await createAdminClient();
 
   const {
     data: { user },
@@ -355,14 +368,21 @@ export async function processParentPaymentAction(
     return { error: "Parameter pembayaran tidak valid." };
   }
 
-  const { data: guardianRelation, error: guardianError } = await supabase
+  const { data: guardianRelations, error: guardianError } = await supabaseAdmin
     .from("student_guardians")
     .select("student_id")
-    .eq("guardian_profile_id", user.id)
-    .single();
+    .eq("guardian_profile_id", user.id);
 
-  if (guardianError || !guardianRelation) {
-    return { error: "Anda tidak memiliki akses ke tagihan ini." };
+  if (guardianError) {
+    console.error("[processParentPaymentAction] guardianError:", guardianError);
+    return { error: "Gagal memverifikasi akses wali: " + guardianError.message };
+  }
+
+  const billStudentIds = (guardianRelations || []).map((g) => g.student_id);
+
+  if (billStudentIds.length === 0) {
+    console.error("[processParentPaymentAction] No guardian relation for user:", user.id);
+    return { error: "Anda tidak memiliki relasi wali yang terdaftar." };
   }
 
   const { data: bill, error: billError } = await supabase
@@ -375,7 +395,7 @@ export async function processParentPaymentAction(
     return { error: "Tagihan tidak ditemukan." };
   }
 
-  if (bill.student_id !== guardianRelation.student_id) {
+  if (!billStudentIds.includes(bill.student_id)) {
     return { error: "Anda tidak memiliki akses ke tagihan ini." };
   }
 
@@ -389,7 +409,7 @@ export async function processParentPaymentAction(
 
   const { data: category, error: categoryError } = await supabase
     .from("payment_categories")
-    .select("allow_installments, minimum_installment_amount")
+    .select("allow_installments, minimum_installment_amount, require_installment_schedule")
     .eq("id", bill.payment_category_id)
     .single();
 
@@ -397,7 +417,40 @@ export async function processParentPaymentAction(
     return { error: "Kategori pembayaran tidak valid." };
   }
 
-  if (category.allow_installments && category.minimum_installment_amount && amount < category.minimum_installment_amount) {
+  const { data: billWithPlan, error: billPlanError } = await supabase
+    .from("student_bills")
+    .select("installment_plan")
+    .eq("id", studentBillId)
+    .single();
+
+  if (billPlanError) {
+    return { error: "Gagal memuat data cicilan tagihan." };
+  }
+
+  const installmentPlan = billWithPlan?.installment_plan as Record<string, unknown> | null;
+
+  if (installmentPlan && category.require_installment_schedule) {
+    const currentInstallment = (installmentPlan.current_installment as number) || 1;
+    const totalInstallments = (installmentPlan.total_installments as number) || 0;
+    const installmentAmount = Number(installmentPlan.installment_amount || 0);
+    const paidInstallments = (installmentPlan.paid_installments as number[]) || [];
+
+    if (currentInstallment > totalInstallments) {
+      return { error: "Semua cicilan untuk tagihan ini sudah lunas." };
+    }
+
+    if (paidInstallments.includes(currentInstallment)) {
+      return { error: `Cicilan ${currentInstallment} sudah dibayar.` };
+    }
+
+    if (installmentAmount > 0 && amount !== installmentAmount) {
+      return {
+        error: `Nominal cicilan ke-${currentInstallment} harus exactly Rp${installmentAmount.toLocaleString(
+          "id-ID"
+        )}.`,
+      };
+    }
+  } else if (!installmentPlan && category.allow_installments && category.minimum_installment_amount && amount < category.minimum_installment_amount) {
     return { error: `Jumlah pembayaran minimal untuk kategori ini adalah Rp${category.minimum_installment_amount.toLocaleString("id-ID")}.` };
   }
 
@@ -449,6 +502,15 @@ export async function processParentPaymentAction(
     if (paymentError.message.includes("Cross-school payment")) {
       return { error: "Pembayaran lintas sekolah tidak diizinkan." };
     }
+    if (paymentError.message.includes("Installment amount must be exactly")) {
+      return { error: paymentError.message };
+    }
+    if (paymentError.message.includes("All installments have been paid")) {
+      return { error: "Semua cicilan untuk tagihan ini sudah lunas." };
+    }
+    if (paymentError.message.includes("already been paid")) {
+      return { error: paymentError.message };
+    }
     return { error: "Gagal memproses pembayaran. Silakan coba lagi." };
   }
 
@@ -490,141 +552,9 @@ export async function processParentPaymentAction(
   return { success: true, paymentId: payment };
 }
 
-export async function uploadPaymentProofAction(paymentId: string, file: File) {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("school_id, role")
-    .eq("id", user.id)
-    .single();
-
-  if (profileError || !profile) {
-    redirect("/login");
-  }
-
-  if (profile.role !== "orang_tua") {
-    redirect("/dashboard/orang-tua");
-  }
-
-  const signatureResult = await validateFileSignature(file);
-  if (!signatureResult.valid || !signatureResult.extension) {
-    return { error: signatureResult.error || "Format file tidak didukung." };
-  }
-
-  const { data: payment, error: paymentError } = await supabase
-    .from("payments")
-    .select("id, school_id, student_id, student_bill_id, amount")
-    .eq("id", paymentId)
-    .single();
-
-  if (paymentError || !payment) {
-    return { error: "Pembayaran tidak ditemukan." };
-  }
-
-  const { data: guardianRelation, error: guardianError } = await supabase
-    .from("student_guardians")
-    .select("student_id")
-    .eq("guardian_profile_id", user.id)
-    .eq("student_id", payment.student_id)
-    .single();
-
-  if (guardianError || !guardianRelation) {
-    return { error: "Anda tidak memiliki akses ke pembayaran ini." };
-  }
-
-  if (payment.school_id !== profile.school_id) {
-    return { error: "Pembayaran tidak berada di sekolah yang sama." };
-  }
-
-  const storagePath = `${profile.school_id}/${paymentId}/${crypto.randomUUID()}.${signatureResult.extension}`;
-
-  const { error: uploadError } = await supabase.storage
-    .from("payment-proofs")
-    .upload(storagePath, file, {
-      contentType: file.type,
-      upsert: false,
-    });
-
-  if (uploadError) {
-    return { error: "Gagal mengunggah bukti pembayaran. Silakan coba lagi." };
-  }
-
-  const { error: insertError } = await supabase.from("payment_proofs").insert({
-    school_id: profile.school_id,
-    payment_id: paymentId,
-    file_path: storagePath,
-    file_name: file.name,
-    mime_type: file.type,
-    file_size: file.size,
-    uploaded_by: user.id,
-    status: "pending",
-  });
-
-  if (insertError) {
-    await supabase.storage.from("payment-proofs").remove([storagePath]);
-    return { error: "Gagal menyimpan data bukti pembayaran. Silakan coba lagi." };
-  }
-
-  await recordFinancialAuditEvent({
-    actionType: "payment_proof_submitted",
-    entityType: "payment_proof",
-    schoolId: profile.school_id,
-    actorProfileId: user.id,
-    actorRole: profile.role,
-    entityId: paymentId,
-    paymentId: paymentId,
-    metadata: {
-      file_name: file.name,
-      mime_type: file.type,
-      file_size: file.size,
-      storage_path: storagePath,
-    },
-  });
-
-  const { data: adminProfiles } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("school_id", profile.school_id)
-    .in("role", ["admin", "bendahara"]);
-
-   if (adminProfiles && adminProfiles.length > 0) {
-     for (const admin of adminProfiles) {
-       await createNotification({
-         recipientProfileId: admin.id,
-         notificationType: "payment_proof_submitted",
-         title: "Bukti Pembayaran Baru",
-          message: `Ada bukti pembayaran baru untuk tagihan Rp${payment.amount.toLocaleString("id-ID")} yang menunggu verifikasi.`,
-         schoolId: profile.school_id,
-         entityType: "payment_proof",
-         entityId: paymentId,
-         actionLabel: "Verifikasi Bukti",
-         actionHref: "/dashboard/admin/payment-proofs",
-         metadata: {
-           payment_id: paymentId,
-           uploaded_by: user.id,
-         },
-       });
-     }
-   }
-
-   if (typeof window !== "undefined") {
-     window.dispatchEvent(new Event("notification:refresh"));
-   }
-
-   return { success: true };
-}
-
 export async function createParentPaymentIntentAction(studentBillId: string, amount: number, paymentMethodId: string, schoolPaymentMethodId: string, paymentMethodType: string) {
   const supabase = await createClient();
+  const supabaseAdmin = await createAdminClient();
 
   const {
     data: { user },
@@ -648,19 +578,24 @@ export async function createParentPaymentIntentAction(studentBillId: string, amo
     return { error: "Forbidden" };
   }
 
-  const { data: guardianRelation, error: guardianError } = await supabase
+  const { data: guardianRelations, error: guardianError } = await supabaseAdmin
     .from("student_guardians")
     .select("student_id")
-    .eq("guardian_profile_id", user.id)
-    .single();
+    .eq("guardian_profile_id", user.id);
 
-  if (guardianError || !guardianRelation) {
-    return { error: "Anda tidak memiliki akses ke tagihan ini." };
+  if (guardianError) {
+    return { error: "Gagal memverifikasi akses wali." };
+  }
+
+  const billStudentIds = (guardianRelations || []).map((g) => g.student_id);
+
+  if (billStudentIds.length === 0) {
+    return { error: "Anda tidak memiliki relasi wali yang terdaftar." };
   }
 
   const { data: bill, error: billError } = await supabase
     .from("student_bills")
-    .select("id, school_id, status, amount, student_id, payment_category_id")
+    .select("id, school_id, status, amount, student_id, payment_category_id, installment_plan")
     .eq("id", studentBillId)
     .single();
 
@@ -668,7 +603,7 @@ export async function createParentPaymentIntentAction(studentBillId: string, amo
     return { error: "Tagihan tidak ditemukan." };
   }
 
-  if (bill.student_id !== guardianRelation.student_id) {
+  if (!billStudentIds.includes(bill.student_id)) {
     return { error: "Anda tidak memiliki akses ke tagihan ini." };
   }
 
@@ -684,39 +619,28 @@ export async function createParentPaymentIntentAction(studentBillId: string, amo
     return { error: "Jumlah pembayaran tidak valid." };
   }
 
-  if (amount > bill.amount) {
-    return { error: "Jumlah pembayaran melebihi sisa tagihan." };
-  }
-
+  // Ambil semua riwayat pembayaran dan buktinya secara dinamis
   const { data: paymentsData, error: paymentsError } = await supabase
     .from("payments")
-    .select("amount")
-    .eq("student_bill_id", studentBillId)
-    .in("status", ["completed", "pending"]);
+    .select("amount, status, payment_proofs(status)")
+    .eq("student_bill_id", studentBillId);
 
   if (paymentsError) {
     return { error: "Gagal memuat data pembayaran." };
   }
 
-  const totalPaid = (paymentsData || []).reduce((sum, p) => sum + p.amount, 0);
+  // Hitung total pembayaran yang sukses atau buktinya sudah di-approve
+  const successfulPayments = (paymentsData || []).filter((p: any) => {
+    const proof = Array.isArray(p.payment_proofs) ? p.payment_proofs[0] : p.payment_proofs;
+    const isApprovedProof = proof && typeof proof === "object" && proof.status === "approved";
+    return p.status === "completed" || p.status === "success" || isApprovedProof;
+  });
+
+  const totalPaid = successfulPayments.reduce((sum, p) => sum + p.amount, 0);
   const remainingBalance = Math.max(0, bill.amount - totalPaid);
 
   if (amount > remainingBalance) {
     return { error: "Jumlah pembayaran melebihi sisa tagihan.", remainingBalance };
-  }
-
-  const { data: category, error: categoryError } = await supabase
-    .from("payment_categories")
-    .select("allow_installments, minimum_installment_amount")
-    .eq("id", bill.payment_category_id)
-    .single();
-
-  if (categoryError || !category) {
-    return { error: "Kategori pembayaran tidak valid." };
-  }
-
-  if (category.allow_installments && category.minimum_installment_amount && amount < category.minimum_installment_amount) {
-    return { error: `Jumlah pembayaran minimal untuk kategori ini adalah Rp${category.minimum_installment_amount.toLocaleString("id-ID")}.` };
   }
 
   const { data: schoolMethod, error: schoolMethodError } = await supabase
@@ -742,32 +666,27 @@ export async function createParentPaymentIntentAction(studentBillId: string, amo
     return { error: "Metode pembayaran tidak aktif." };
   }
 
-  const activeProvider = getActiveProviders()[0] || "mock";
-  const availableMethods = getAvailableMethods(activeProvider);
-  const methodType = paymentMethodType as PaymentMethodType;
-  if (!availableMethods.includes(methodType)) {
-    return { error: `Metode pembayaran ${paymentMethodType} tidak didukung oleh provider ${activeProvider}.` };
-  }
-
   try {
     const result = await createParentPaymentIntent({
       studentBillId,
       amount,
       paymentMethodId,
       schoolPaymentMethodId,
-      provider: "mock",
-      paymentMethodType,
+      provider: "midtrans",
+      paymentMethodType: paymentMethodType as PaymentMethodType,
     });
 
     return { intent: result, remainingBalance };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Gagal membuat transaksi pembayaran.";
-    return { error: message };
+  } catch (err: any) {
+    console.error("Detail error payment intent:", err);
+    const errorMessage = err instanceof Error ? err.message : JSON.stringify(err);
+    return { error: `Gagal: ${errorMessage}` };
   }
 }
 
 export async function getParentPaymentGatewayTransactionAction(gatewayTransactionId: string) {
   const supabase = await createClient();
+  const supabaseAdmin = await createAdminClient();
 
   const {
     data: { user },
@@ -812,14 +731,19 @@ export async function getParentPaymentGatewayTransactionAction(gatewayTransactio
     return { error: "Transaksi gateway tidak valid." };
   }
 
-  const { data: guardianRelation, error: guardianError } = await supabase
+  const { data: guardianRelations, error: guardianError } = await supabaseAdmin
     .from("student_guardians")
     .select("student_id")
-    .eq("guardian_profile_id", user.id)
-    .single();
+    .eq("guardian_profile_id", user.id);
 
-  if (guardianError || !guardianRelation) {
-    return { error: "Anda tidak memiliki akses ke transaksi ini." };
+  if (guardianError) {
+    return { error: "Gagal memverifikasi akses wali." };
+  }
+
+  const billStudentIds = (guardianRelations || []).map((g) => g.student_id);
+
+  if (billStudentIds.length === 0) {
+    return { error: "Anda tidak memiliki relasi wali yang terdaftar." };
   }
 
   const { data: bill, error: billError } = await supabase
@@ -832,7 +756,7 @@ export async function getParentPaymentGatewayTransactionAction(gatewayTransactio
     return { error: "Tagihan tidak ditemukan." };
   }
 
-  if (bill.student_id !== guardianRelation.student_id) {
+  if (!billStudentIds.includes(bill.student_id)) {
     return { error: "Anda tidak memiliki akses ke transaksi ini." };
   }
 
@@ -858,6 +782,7 @@ export async function getParentPaymentGatewayTransactionAction(gatewayTransactio
 
 export async function simulateParentWebhookAction(gatewayTransactionId: string) {
   const supabase = await createClient();
+  const supabaseAdmin = await createAdminClient();
 
   const {
     data: { user },
@@ -881,13 +806,19 @@ export async function simulateParentWebhookAction(gatewayTransactionId: string) 
     return { error: "Forbidden" };
   }
 
-  const transactionResult = await getParentPaymentGatewayTransactionAction(gatewayTransactionId);
+  const { data: gatewayTransaction, error: gatewayError } = await supabaseAdmin
+    .from("payment_gateway_transactions")
+    .select("id, school_id, payment_id, provider, external_order_id, external_transaction_id, provider_status, payment_method_type, raw_payload")
+    .eq("id", gatewayTransactionId)
+    .single();
 
-  if ("error" in transactionResult) {
-    return transactionResult;
+  if (gatewayError || !gatewayTransaction) {
+    return { error: "Transaksi gateway tidak ditemukan." };
   }
 
-  const gatewayTransaction = transactionResult.transaction as Record<string, unknown>;
+  if (gatewayTransaction.school_id !== profile.school_id) {
+    return { error: "Transaksi tidak berada di sekolah yang sama." };
+  }
 
   if (gatewayTransaction.provider_status !== "pending" && gatewayTransaction.provider_status !== "processing" && gatewayTransaction.provider_status !== "failed") {
     return { error: "Transaksi gateway tidak dapat disimulasikan lagi." };
@@ -900,37 +831,99 @@ export async function simulateParentWebhookAction(gatewayTransactionId: string) 
     return { error: "Jumlah pembayaran tidak valid pada transaksi gateway." };
   }
 
-  const mockSecret = process.env.MOCK_PAYMENT_WEBHOOK_SECRET || "replace_me";
+  const now = new Date().toISOString();
 
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey("raw", encoder.encode(mockSecret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-  const webhookPayload = {
-    external_order_id: gatewayTransaction.external_order_id,
-    external_transaction_id: gatewayTransaction.external_transaction_id,
-    status: "success" as const,
-    amount: requestedAmount,
-    payment_method_type: gatewayTransaction.payment_method_type,
-  };
-  const signatureBuffer = await crypto.subtle.sign("HMAC", key, encoder.encode(JSON.stringify(webhookPayload)));
-  const signatureArray = Array.from(new Uint8Array(signatureBuffer));
-  const signature = "sha256=" + signatureArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+  const { data: updatedTransaction, error: updateError } = await supabaseAdmin
+    .from("payment_gateway_transactions")
+    .update({
+      provider_status: "processing",
+      updated_at: now,
+    })
+    .eq("id", gatewayTransaction.id)
+    .in("provider_status", ["pending", "failed"])
+    .select("id, provider_status, payment_id, school_id")
+    .single();
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  const webhookUrl = `${baseUrl}/api/webhooks/payment/mock`;
+  if (updateError || !updatedTransaction) {
+    return { error: "Gagal memperbarui status transaksi gateway." };
+  }
 
   try {
-    const response = await fetch(webhookUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-mock-signature": signature,
-      },
-      body: JSON.stringify(webhookPayload),
-    });
+    console.log("[simulateParentWebhookAction] updatedTransaction:", updatedTransaction);
+    if (updatedTransaction.payment_id) {
+      console.log("[simulateParentWebhookAction] calling finalize_pending_payment with idempotency:", `gw-${gatewayTransaction.external_order_id}`);
+      const { data: payment, error: paymentError } = await supabaseAdmin.rpc("finalize_pending_payment", {
+        p_idempotency_key: `gw-${gatewayTransaction.external_order_id}`,
+      });
+      console.log("[simulateParentWebhookAction] finalize result:", { payment, paymentError });
 
-    if (!response.ok) {
-      const errorData = (await response.json().catch(() => ({ error: "Unknown error" }))) as { error?: string };
-      return { error: errorData.error || `Webhook simulation failed: ${response.status}` };
+      if (paymentError) {
+        await supabaseAdmin
+          .from("payment_gateway_transactions")
+          .update({
+            provider_status: "failed",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", updatedTransaction.id)
+          .eq("provider_status", "processing");
+
+        return { error: "Pembayaran gagal diselesaikan." };
+      }
+
+      const updatePayload: Record<string, unknown> = {
+        provider_status: "success",
+        updated_at: now,
+        webhook_received_at: now,
+        raw_payload: {
+          ...rawPayload,
+          webhook_payload: {
+            external_order_id: gatewayTransaction.external_order_id,
+            external_transaction_id: gatewayTransaction.external_transaction_id,
+            status: "success",
+            amount: requestedAmount,
+            payment_method_type: gatewayTransaction.payment_method_type,
+          },
+        },
+        payment_id: updatedTransaction.payment_id,
+      };
+
+      if (gatewayTransaction.external_transaction_id) {
+        updatePayload.external_transaction_id = gatewayTransaction.external_transaction_id;
+      }
+
+      if (gatewayTransaction.payment_method_type) {
+        updatePayload.payment_method_type = gatewayTransaction.payment_method_type;
+      }
+
+      const { error: successUpdateError } = await supabaseAdmin
+        .from("payment_gateway_transactions")
+        .update(updatePayload)
+        .eq("id", updatedTransaction.id)
+        .eq("provider_status", "processing");
+
+      if (successUpdateError) {
+        return { error: "Gagal menyelesaikan transaksi gateway." };
+      }
+    } else {
+      await supabaseAdmin
+        .from("payment_gateway_transactions")
+        .update({
+          provider_status: "success",
+          updated_at: now,
+          webhook_received_at: now,
+          raw_payload: {
+            ...rawPayload,
+            webhook_payload: {
+              external_order_id: gatewayTransaction.external_order_id,
+              external_transaction_id: gatewayTransaction.external_transaction_id,
+              status: "success",
+              amount: requestedAmount,
+              payment_method_type: gatewayTransaction.payment_method_type,
+            },
+          },
+        })
+        .eq("id", updatedTransaction.id)
+        .eq("provider_status", "processing");
     }
 
     await recordFinancialAuditEvent({
@@ -939,43 +932,53 @@ export async function simulateParentWebhookAction(gatewayTransactionId: string) 
       schoolId: profile.school_id,
       actorProfileId: user.id,
       actorRole: profile.role,
-      entityId: gatewayTransaction.id as string | null,
-      paymentId: (gatewayTransaction.payment_id as string | null) ?? null,
+      entityId: gatewayTransaction.id,
+      paymentId: updatedTransaction.payment_id || null,
       newStatus: "success",
       metadata: {
-        provider: gatewayTransaction.provider as string,
-        external_order_id: gatewayTransaction.external_order_id as string,
-        external_transaction_id: gatewayTransaction.external_transaction_id as string,
-    },
-  });
-
-  if (gatewayTransaction.payment_id) {
-    await createNotification({
-      recipientProfileId: user.id,
-      notificationType: "gateway_payment_success",
-      title: "Pembayaran Berhasil",
-      message: "Pembayaran Anda telah berhasil diproses.",
-      schoolId: profile.school_id,
-      entityType: "payment_gateway_transaction",
-      entityId: gatewayTransaction.id as string | null,
-      actionLabel: "Lihat Bukti",
-      actionHref: `/dashboard/orang-tua/payments/receipt/${gatewayTransaction.payment_id}`,
-      metadata: {
-        payment_id: gatewayTransaction.payment_id,
-        provider: gatewayTransaction.provider as string,
-        external_transaction_id: gatewayTransaction.external_transaction_id as string,
+        provider: gatewayTransaction.provider,
+        external_order_id: gatewayTransaction.external_order_id,
+        external_transaction_id: gatewayTransaction.external_transaction_id,
       },
     });
-  }
 
-  return { success: true };
+    if (updatedTransaction.payment_id) {
+      await createNotification({
+        recipientProfileId: user.id,
+        notificationType: "gateway_payment_success",
+        title: "Pembayaran Berhasil",
+        message: "Pembayaran Anda telah berhasil diproses.",
+        schoolId: profile.school_id,
+        entityType: "payment_gateway_transaction",
+        entityId: gatewayTransaction.id,
+        actionLabel: "Lihat Bukti",
+        actionHref: `/dashboard/orang-tua/payments/receipt/${updatedTransaction.payment_id}`,
+        metadata: {
+          payment_id: updatedTransaction.payment_id,
+          provider: gatewayTransaction.provider,
+          external_transaction_id: gatewayTransaction.external_transaction_id,
+        },
+      });
+    }
+
+    return { success: true };
   } catch {
-    return { error: "Gagal memanggil webhook simulasi." };
+    await supabaseAdmin
+      .from("payment_gateway_transactions")
+      .update({
+        provider_status: "failed",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", updatedTransaction.id)
+      .eq("provider_status", "processing");
+
+    return { error: "Gagal memproses simulasi pembayaran." };
   }
 }
 
 export async function getParentPaymentReceiptAction(paymentId: string) {
   const supabase = await createClient();
+  const supabaseAdmin = await createAdminClient();
 
   const {
     data: { user },
@@ -999,14 +1002,19 @@ export async function getParentPaymentReceiptAction(paymentId: string) {
     return { error: "Forbidden" };
   }
 
-  const { data: guardianRelation, error: guardianError } = await supabase
+  const { data: guardianRelations, error: guardianError } = await supabaseAdmin
     .from("student_guardians")
     .select("student_id")
-    .eq("guardian_profile_id", user.id)
-    .single();
+    .eq("guardian_profile_id", user.id);
 
-  if (guardianError || !guardianRelation) {
-    return { error: "Anda tidak memiliki akses ke data ini." };
+  if (guardianError) {
+    return { error: "Gagal memverifikasi akses wali." };
+  }
+
+  const billStudentIds = (guardianRelations || []).map((g) => g.student_id);
+
+  if (billStudentIds.length === 0) {
+    return { error: "Anda tidak memiliki relasi wali yang terdaftar." };
   }
 
   const { data: payment, error: paymentError } = await supabase
@@ -1032,7 +1040,7 @@ export async function getParentPaymentReceiptAction(paymentId: string) {
     return { error: "Receipt hanya tersedia untuk pembayaran yang sudah berhasil." };
   }
 
-  const { data: bill, error: billError } = await supabase
+  const { data: paymentBill, error: paymentBillError } = await supabase
     .from("student_bills")
     .select(`
       id,
@@ -1049,22 +1057,22 @@ export async function getParentPaymentReceiptAction(paymentId: string) {
     .eq("id", payment.student_bill_id)
     .single();
 
-  if (billError || !bill) {
+  if (paymentBillError || !paymentBill) {
     return { error: "Tagihan tidak ditemukan." };
   }
 
-  if (bill.student_id !== guardianRelation.student_id) {
+  if (!billStudentIds.includes(paymentBill.student_id)) {
     return { error: "Anda tidak memiliki akses ke data ini." };
   }
 
-  if (bill.school_id !== profile.school_id) {
+  if (paymentBill.school_id !== profile.school_id) {
     return { error: "Data tidak berada di sekolah yang sama." };
   }
 
   const { data: school, error: schoolError } = await supabase
     .from("schools")
     .select("name, address, phone, email")
-    .eq("id", bill.school_id)
+    .eq("id", paymentBill.school_id)
     .single();
 
   if (schoolError || !school) {
@@ -1074,7 +1082,7 @@ export async function getParentPaymentReceiptAction(paymentId: string) {
   const { data: billPayments, error: billPaymentsError } = await supabase
     .from("payments")
     .select("amount, status")
-    .eq("student_bill_id", bill.id)
+    .eq("student_bill_id", paymentBill.id)
     .in("status", ["completed", "pending"]);
 
   if (billPaymentsError) {
@@ -1082,19 +1090,19 @@ export async function getParentPaymentReceiptAction(paymentId: string) {
   }
 
   const totalPaid = (billPayments || []).reduce((sum, p) => sum + p.amount, 0);
-  const remainingBalance = Math.max(0, bill.amount - totalPaid);
+  const remainingBalance = Math.max(0, paymentBill.amount - totalPaid);
 
   const paymentMethod = Array.isArray(payment.payment_methods)
     ? payment.payment_methods[0]
     : payment.payment_methods;
 
-  const normalizedStudent = Array.isArray(bill.students)
-    ? bill.students[0]
-    : bill.students;
+  const normalizedStudent = Array.isArray(paymentBill.students)
+    ? paymentBill.students[0]
+    : paymentBill.students;
 
-  const normalizedCategory = Array.isArray(bill.payment_categories)
-    ? bill.payment_categories[0]
-    : bill.payment_categories;
+  const normalizedCategory = Array.isArray(paymentBill.payment_categories)
+    ? paymentBill.payment_categories[0]
+    : paymentBill.payment_categories;
 
   return {
     school: {
@@ -1110,11 +1118,11 @@ export async function getParentPaymentReceiptAction(paymentId: string) {
         }
       : null,
     bill: {
-      id: bill.id,
-      amount: bill.amount,
-      status: bill.status,
-      billing_period_start: bill.billing_period_start,
-      billing_period_end: bill.billing_period_end,
+      id: paymentBill.id,
+      amount: paymentBill.amount,
+      status: paymentBill.status,
+      billing_period_start: paymentBill.billing_period_start,
+      billing_period_end: paymentBill.billing_period_end,
       payment_category_name: normalizedCategory?.name || null,
     },
     payment: {
@@ -1130,4 +1138,3 @@ export async function getParentPaymentReceiptAction(paymentId: string) {
     remainingBalance,
   };
 }
-

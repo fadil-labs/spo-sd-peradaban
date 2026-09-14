@@ -12,7 +12,7 @@ function generateTemporaryPassword(): string {
   return `${prefix}${segments.join("")}`.slice(0, 12);
 }
 
-export async function getUsersAction(page?: number, pageSize?: number, searchQuery?: string) {
+export async function getUsersAction(page?: number, pageSize?: number, searchQuery?: string, roleFilter?: string) {
   const supabase = await createClient();
 
   const {
@@ -52,6 +52,10 @@ export async function getUsersAction(page?: number, pageSize?: number, searchQue
   if (searchQuery && searchQuery.trim()) {
     const trimmed = searchQuery.trim();
     query = query.or(`full_name.ilike.%${trimmed}%,email.ilike.%${trimmed}%,username.ilike.%${trimmed}%`);
+  }
+
+  if (roleFilter && roleFilter !== "all") {
+    query = query.eq("role", roleFilter);
   }
 
   const { data: users, error: usersError, count } = await query;

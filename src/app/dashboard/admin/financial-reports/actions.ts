@@ -99,7 +99,8 @@ export async function getFinancialSummaryAction(filters?: FinancialReportFilters
 
   let billQuery = supabase
     .from("student_bills")
-    .select(`
+    .select(
+      `
       id,
       amount,
       status,
@@ -122,14 +123,15 @@ export async function getFinancialSummaryAction(filters?: FinancialReportFilters
           name
         )
       )
-    `)
+    `
+    )
     .eq("school_id", profile.school_id);
 
   if (filters?.startDate) {
     billQuery = billQuery.gte("created_at", filters.startDate);
   }
   if (filters?.endDate) {
-    billQuery = billQuery.lte("created_at", filters.endDate);
+    billQuery = billQuery.lte("created_at", `${filters.endDate}T23:59:59`);
   }
   if (filters?.academicYearId && filters.academicYearId !== "all") {
     billQuery = billQuery.eq("student_enrollments.academic_year_id", filters.academicYearId);
@@ -150,16 +152,7 @@ export async function getFinancialSummaryAction(filters?: FinancialReportFilters
   const { data: bills, error: billsError } = await billQuery;
 
   if (billsError) {
-    console.error("[FINANCIAL_SUMMARY_FAILED]", {
-      action: "getFinancialSummaryAction",
-      code: billsError.code,
-      message: billsError.message,
-      details: billsError.details,
-      hint: billsError.hint,
-      filters,
-      school_id: profile.school_id,
-      user_id: user.id,
-    });
+    console.error("[FINANCIAL_SUMMARY_FAILED]", billsError);
     return { error: "Gagal memuat data tagihan." };
   }
 
@@ -182,13 +175,13 @@ export async function getFinancialSummaryAction(filters?: FinancialReportFilters
   });
 
   const billIds = billList.map((b) => b.id);
-
-  const paymentsMap: Record<string, { id: string; amount: number; status: string; payment_method_id?: string | null; payment_date?: string; reference_number?: string; payment_methods?: { name: string } | null }[]> = {};
+  const paymentsMap: Record<string, any[]> = {};
 
   if (billIds.length > 0) {
     const { data: payments, error: paymentsError } = await supabase
       .from("payments")
-      .select(`
+      .select(
+        `
         id,
         amount,
         status,
@@ -198,7 +191,8 @@ export async function getFinancialSummaryAction(filters?: FinancialReportFilters
           id,
           name
         )
-      `)
+      `
+      )
       .in("student_bill_id", billIds)
       .in("status", ["completed", "pending"]);
 
@@ -222,17 +216,12 @@ export async function getFinancialSummaryAction(filters?: FinancialReportFilters
     }
   }
 
-  const proofsMap: Record<string, { status: string; rejection_reason: string | null }[]> = {};
+  const proofsMap: Record<string, any[]> = {};
 
   if (billIds.length > 0) {
     const { data: proofs, error: proofsError } = await supabase
       .from("payment_proofs")
-      .select(`
-        id,
-        status,
-        rejection_reason,
-        student_bill_id
-      `)
+      .select(`id, status, rejection_reason, student_bill_id`)
       .in("student_bill_id", billIds);
 
     if (!proofsError && proofs) {
@@ -346,7 +335,8 @@ export async function getFinancialTransactionsAction(filters?: FinancialReportFi
 
   let query = supabase
     .from("student_bills")
-    .select(`
+    .select(
+      `
       id,
       amount,
       status,
@@ -370,7 +360,8 @@ export async function getFinancialTransactionsAction(filters?: FinancialReportFi
           name
         )
       )
-    `)
+    `
+    )
     .eq("school_id", profile.school_id)
     .order("created_at", { ascending: false })
     .range(from, to);
@@ -379,7 +370,7 @@ export async function getFinancialTransactionsAction(filters?: FinancialReportFi
     query = query.gte("created_at", filters.startDate);
   }
   if (filters?.endDate) {
-    query = query.lte("created_at", filters.endDate);
+    query = query.lte("created_at", `${filters.endDate}T23:59:59`);
   }
   if (filters?.academicYearId && filters.academicYearId !== "all") {
     query = query.eq("student_enrollments.academic_year_id", filters.academicYearId);
@@ -400,34 +391,22 @@ export async function getFinancialTransactionsAction(filters?: FinancialReportFi
   const { data: bills, error: billsError } = await query;
 
   if (billsError) {
-    console.error("[FINANCIAL_TRANSACTIONS_FAILED]", {
-      action: "getFinancialTransactionsAction",
-      code: billsError.code,
-      message: billsError.message,
-      details: billsError.details,
-      hint: billsError.hint,
-      filters,
-      school_id: profile.school_id,
-      user_id: user.id,
-      page,
-      pageSize,
-      from,
-      to,
-    });
+    console.error("[FINANCIAL_TRANSACTIONS_FAILED]", billsError);
     return { error: "Gagal memuat data transaksi." };
   }
 
   const billList = (bills || []) as unknown[];
   const billIds = billList.map((b) => (b as Record<string, unknown>).id as string);
 
-  const paymentsMap: Record<string, { id: string; amount: number; status: string; payment_method_id?: string | null; payment_date?: string; reference_number?: string; payment_methods?: { name: string } | null }[]> = {};
-  const proofsMap: Record<string, { status: string; rejection_reason: string | null }[]> = {};
+  const paymentsMap: Record<string, any[]> = {};
+  const proofsMap: Record<string, any[]> = {};
 
   if (billIds.length > 0) {
     const [{ data: payments }, { data: proofs }] = await Promise.all([
       supabase
         .from("payments")
-        .select(`
+        .select(
+          `
           id,
           amount,
           status,
@@ -437,17 +416,13 @@ export async function getFinancialTransactionsAction(filters?: FinancialReportFi
             id,
             name
           )
-        `)
+        `
+        )
         .in("student_bill_id", billIds)
         .in("status", ["completed", "pending"]),
       supabase
         .from("payment_proofs")
-        .select(`
-          id,
-          status,
-          rejection_reason,
-          student_bill_id
-        `)
+        .select(`id, status, rejection_reason, student_bill_id`)
         .in("student_bill_id", billIds),
     ]);
 

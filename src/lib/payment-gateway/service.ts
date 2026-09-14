@@ -1,12 +1,14 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { PaymentIntentRequest, PaymentIntentResult, PaymentGatewayProvider, ProviderStatus } from "./types";
 import { createMockProvider } from "./providers/mock";
+import { createMidtransProvider } from "./providers/midtrans";
 import { resolveProviderForMethod } from "@/lib/payments/strategy";
 import { PaymentProvider as PaymentsPaymentProvider } from "@/lib/payments/types";
 
 async function createPaymentIntentInternal(request: PaymentIntentRequest, allowedRoles: string[]): Promise<PaymentIntentResult> {
   const supabase = await createClient();
+  const supabaseAdmin = await createAdminClient();
 
   const {
     data: { user },
@@ -15,6 +17,13 @@ async function createPaymentIntentInternal(request: PaymentIntentRequest, allowe
   if (!user) {
     redirect("/login");
   }
+
+  console.log("[createPaymentIntentInternal] start:", {
+    studentBillId: request.studentBillId,
+    amount: request.amount,
+    provider: request.provider,
+    paymentMethodType: request.paymentMethodType,
+  });
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
@@ -32,13 +41,15 @@ async function createPaymentIntentInternal(request: PaymentIntentRequest, allowe
 
   const { data: bill, error: billError } = await supabase
     .from("student_bills")
-    .select("id, school_id, amount, status")
+    .select("id, school_id, amount, status, student_id")
     .eq("id", request.studentBillId)
     .single();
 
   if (billError || !bill) {
     throw new Error("Tagihan tidak ditemukan.");
   }
+
+  console.log("[createPaymentIntentInternal] bill:", bill);
 
   if (bill.school_id !== profile.school_id) {
     throw new Error("Tagihan tidak berada di sekolah yang sama.");
@@ -79,7 +90,10 @@ async function createPaymentIntentInternal(request: PaymentIntentRequest, allowe
     throw new Error("Metode pembayaran tidak aktif.");
   }
 
-  const externalOrderId = `bill-${request.studentBillId}-${Date.now()}`;
+  console.log("[createPaymentIntentInternal] paymentMethod:", paymentMethod);
+
+  const shortBillId = request.studentBillId.slice(0, 8);
+  const externalOrderId = `bill-${shortBillId}-${Date.now()}`;
 
   const { data: existingGateway, error: existingError } = await supabase
     .from("payment_gateway_transactions")
@@ -98,13 +112,53 @@ async function createPaymentIntentInternal(request: PaymentIntentRequest, allowe
     throw new Error("Transaksi gateway untuk tagihan ini sudah ada dan masih aktif.");
   }
 
+  const idempotencyKey = `gw-${externalOrderId}`;
+  const referenceNumber = `GW-${externalOrderId}`;
+
+  console.log("[createPaymentIntentInternal] inserting payment:", {
+    school_id: profile.school_id,
+    student_id: bill.student_id,
+    student_bill_id: request.studentBillId,
+    amount: request.amount,
+    reference_number: referenceNumber,
+    status: "pending",
+    idempotency_key: idempotencyKey,
+  });
+
+  const { data: payment, error: paymentError } = await supabaseAdmin
+    .from("payments")
+    .insert({
+      school_id: profile.school_id,
+      student_id: bill.student_id,
+      student_bill_id: request.studentBillId,
+      payment_method_id: request.paymentMethodId || null,
+      school_payment_method_id: request.schoolPaymentMethodId || null,
+      amount: request.amount,
+      payment_date: new Date().toISOString(),
+      reference_number: referenceNumber,
+      status: "pending",
+      idempotency_key: idempotencyKey,
+    })
+    .select("id")
+    .single();
+
+  console.log("[createPaymentIntentInternal] payment insert result:", { payment, paymentError });
+
+  if (paymentError || !payment) {
+    throw new Error("Gagal membuat data pembayaran.");
+  }
+
   const provider = resolveProvider(request.provider);
+
+  console.log("[createPaymentIntentInternal] calling provider.createPaymentIntent");
 
   const intent = await provider.createPaymentIntent({
     amount: request.amount,
     paymentMethodType: request.paymentMethodType,
     externalOrderId,
   });
+
+  console.log("[createPaymentIntentInternal] intent:", intent);
 
   const rawPayload = {
     ...intent.rawPayload,
@@ -114,11 +168,11 @@ async function createPaymentIntentInternal(request: PaymentIntentRequest, allowe
     requested_amount: request.amount,
   };
 
-  const { data: gatewayTransaction, error: insertError } = await supabase
+  const { data: gatewayTransaction, error: insertError } = await supabaseAdmin
     .from("payment_gateway_transactions")
     .insert({
       school_id: profile.school_id,
-      payment_id: null,
+      payment_id: payment.id,
       provider: request.provider,
       external_order_id: externalOrderId,
       external_transaction_id: intent.externalTransactionId,
@@ -209,6 +263,8 @@ export function resolveProvider(provider: string): PaymentGatewayProvider {
   switch (provider) {
     case "mock":
       return createMockProvider();
+    case "midtrans":
+      return createMidtransProvider();
     default:
       throw new Error(`Provider ${provider} belum didukung.`);
   }

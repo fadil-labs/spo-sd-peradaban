@@ -2,13 +2,16 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { PageHeader } from "@/components/operational/PageHeader";
-import { Card } from "@/components/ui/card";
 import { DataTable } from "@/components/operational/data-table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { useToast } from "@/components/ui/toast";
-import { getBillTemplatesAction, createBillTemplateAction, updateBillTemplateAction, deleteBillTemplateAction } from "./actions";
-import { Pencil, Trash2 } from "lucide-react";
+import {
+  getBillTemplatesAction,
+  createBillTemplateAction,
+  updateBillTemplateAction,
+  deleteBillTemplateAction,
+} from "./actions";
+import { Pencil, Trash2, PlusCircle, X, ScrollText } from "lucide-react";
 
 type BillTemplate = {
   id: string;
@@ -166,6 +169,7 @@ export default function BillTemplatesPage() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!window.confirm("Apakah Anda yakin ingin menghapus templat tagihan ini?")) return;
     const result = await deleteBillTemplateAction(id);
     if (result?.error) {
       toast.addToast("error", result.error);
@@ -196,33 +200,52 @@ export default function BillTemplatesPage() {
       return `${template.students.nis} - ${template.students.full_name}`;
     }
     if (template.classes) {
-      return template.classes.name;
+      return `Kelas: ${template.classes.name}`;
     }
-    return "Semua";
+    return "Semua Siswa (Umum)";
   };
 
   const columns = [
     {
       key: "category",
-      header: "Kategori",
-      render: (item: BillTemplate) => item.payment_categories?.name || "-",
+      header: "Kategori Pembayaran",
+      render: (item: BillTemplate) => (
+        <div>
+          <p className="font-bold text-[#1A1A1A] text-xs sm:text-sm">{item.payment_categories?.name || "-"}</p>
+          {item.description && (
+            <p className="text-[11px] text-[#7A7A7A] mt-0.5 line-clamp-1">{item.description}</p>
+          )}
+        </div>
+      ),
     },
     {
       key: "target",
-      header: "Target",
-      render: (item: BillTemplate) => getTargetLabel(item),
+      header: "Target Sasaran",
+      render: (item: BillTemplate) => (
+        <span className="text-xs font-semibold text-[#4A4A4A]">{getTargetLabel(item)}</span>
+      ),
     },
     {
       key: "amount",
-      header: "Jumlah",
-      render: (item: BillTemplate) => formatCurrency(item.amount),
+      header: "Nominal",
+      render: (item: BillTemplate) => (
+        <span className="font-extrabold text-xs sm:text-sm text-[#0C3B2E]">{formatCurrency(item.amount)}</span>
+      ),
     },
     {
       key: "recurring",
       header: "Berulang",
-      render: (item: BillTemplate) => (
-        item.is_recurring ? <span className="text-xs text-primary">Ya</span> : <span className="text-xs text-muted">Tidak</span>
-      ),
+      render: (item: BillTemplate) =>
+        item.is_recurring ? (
+          <span className="inline-block px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-[#0C3B2E]/10 text-[#0C3B2E]">
+            Berulang (Recurring)
+          </span>
+        ) : (
+          <span className="inline-block px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-[#7A7A7A]/10 text-[#7A7A7A]">
+            Sekali (One-off)
+          </span>
+        ),
+      mobileHide: true,
     },
     {
       key: "actions",
@@ -233,15 +256,15 @@ export default function BillTemplatesPage() {
           <button
             onClick={() => startEdit(item)}
             disabled={isSubmitting}
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border bg-surface text-xs font-semibold hover:bg-muted/10 transition-all active:scale-[0.98] min-h-[44px]"
+            className="px-3 py-1.5 bg-[#F5F3EC] border border-[#E5E0D8] text-[#1A1A1A] text-xs font-semibold rounded-xl hover:bg-[#EAE6DC] transition-colors inline-flex items-center gap-1.5"
           >
-            <Pencil className="h-3.5 w-3.5" />
+            <Pencil className="h-3.5 w-3.5 text-[#0C3B2E]" />
             Edit
           </button>
           <button
             onClick={() => handleDelete(item.id)}
             disabled={isSubmitting}
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-danger text-danger text-xs font-semibold hover:bg-danger/10 transition-all active:scale-[0.98] min-h-[44px]"
+            className="px-3 py-1.5 bg-[#A83A32]/10 border border-[#A83A32]/30 text-[#A83A32] text-xs font-semibold rounded-xl hover:bg-[#A83A32] hover:text-white transition-colors inline-flex items-center gap-1.5"
           >
             <Trash2 className="h-3.5 w-3.5" />
             Hapus
@@ -252,170 +275,213 @@ export default function BillTemplatesPage() {
   ];
 
   return (
-    <PageContainer>
-      <div className="flex flex-col gap-6">
-        <PageHeader
-          title="Templat Tagihan"
-          description="Buat dan kelola templat tagihan untuk siswa atau kelas"
-        />
+    <PageContainer className="bg-[#F5F3EC] min-h-screen p-3 sm:p-5 md:p-6 text-[#1A1A1A]">
+      <div className="flex flex-col gap-5 sm:gap-6 max-w-[1600px] mx-auto">
+        {/* HEADER */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-5 rounded-[20px] border border-[#E5E0D8] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-[#1A1A1A] tracking-tight">
+              Templat Tagihan Otomatis
+            </h1>
+            <p className="text-xs sm:text-sm text-[#7A7A7A] mt-0.5">
+              Buat templat tagihan berkala untuk mempermudah penerbitan tagihan massal per kelas atau siswa.
+            </p>
+          </div>
+
+          <div>
+            {formState === "list" ? (
+              <button
+                onClick={() => {
+                  resetForm();
+                  setFormState("create");
+                }}
+                className="px-4 py-2.5 bg-[#0C3B2E] text-white text-xs font-bold rounded-xl hover:bg-[#10523E] transition-all shadow-sm inline-flex items-center gap-2"
+              >
+                <PlusCircle className="h-4 w-4" />
+                <span>Buat Templat Baru</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  resetForm();
+                  setFormState("list");
+                  setEditingId(null);
+                }}
+                className="px-4 py-2 bg-[#F5F3EC] border border-[#E5E0D8] text-[#1A1A1A] text-xs font-bold rounded-xl hover:bg-[#EAE6DC] transition-colors inline-flex items-center gap-1.5"
+              >
+                <X className="h-4 w-4" />
+                <span>Batal</span>
+              </button>
+            )}
+          </div>
+        </div>
 
         {error && (
-          <div className="rounded-md border border-danger/20 bg-danger/10 px-4 py-3">
-            <p className="text-sm text-danger">{error}</p>
+          <div className="rounded-2xl border border-[#A83A32]/30 bg-[#A83A32]/10 p-4">
+            <p className="text-xs sm:text-sm font-semibold text-[#A83A32]">{error}</p>
           </div>
         )}
 
-        {formState !== "list" ? (
-          <Card>
-            <h3 className="text-base font-semibold text-foreground mb-4">
-              {formState === "create" ? "Buat Templat Tagihan" : "Edit Templat Tagihan"}
+        {submitError && (
+          <div className="rounded-2xl border border-[#A83A32]/30 bg-[#A83A32]/10 p-4">
+            <p className="text-xs sm:text-sm font-semibold text-[#A83A32]">{submitError}</p>
+          </div>
+        )}
+
+        {/* FORM CREATE / EDIT */}
+        {(formState === "create" || formState === "edit") && (
+          <div className="bg-white p-5 sm:p-6 rounded-[20px] border border-[#E5E0D8] shadow-[0_2px_10px_rgba(0,0,0,0.02)] space-y-5">
+            <h3 className="text-base font-bold text-[#1A1A1A]">
+              {formState === "create" ? "Buat Templat Tagihan Baru" : "Edit Templat Tagihan"}
             </h3>
+
             <form className="space-y-4" onSubmit={formState === "create" ? handleCreate : handleUpdate}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="payment_category_id" className="block text-sm font-medium text-foreground mb-1.5">
+                  <label htmlFor="payment_category_id" className="block text-xs font-bold text-[#555] mb-1.5">
                     Kategori Pembayaran
                   </label>
                   <select
                     id="payment_category_id"
                     value={formData.payment_category_id}
                     onChange={(e) => setFormData({ ...formData, payment_category_id: e.target.value })}
-                    className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-full px-3.5 py-2.5 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
                     required
                     disabled={isSubmitting}
                   >
-                    <option value="">Pilih kategori</option>
+                    <option value="">Pilih Kategori</option>
                     {categories.map((c) => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
                 </div>
+
                 <div>
-                  <label htmlFor="amount" className="block text-sm font-medium text-foreground mb-1.5">
-                    Jumlah (Rp)
+                  <label htmlFor="amount" className="block text-xs font-bold text-[#555] mb-1.5">
+                    Nominal Tagihan (Rp)
                   </label>
                   <input
                     id="amount"
                     type="number"
                     value={formData.amount}
                     onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                    className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                    placeholder="100000"
+                    placeholder="Contoh: 250000"
+                    className="w-full px-3.5 py-2.5 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
                     required
                     disabled={isSubmitting}
                   />
                 </div>
+
                 <div>
-                  <label htmlFor="class_id" className="block text-sm font-medium text-foreground mb-1.5">
-                    Kelas (Opsional)
+                  <label htmlFor="class_id" className="block text-xs font-bold text-[#555] mb-1.5">
+                    Target Kelas (Opsional)
                   </label>
                   <select
                     id="class_id"
                     value={formData.class_id}
                     onChange={(e) => setFormData({ ...formData, class_id: e.target.value, student_id: "" })}
-                    className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-full px-3.5 py-2.5 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
                     disabled={isSubmitting || !!formData.student_id}
                   >
-                    <option value="">Pilih kelas</option>
+                    <option value="">Semua / Tidak Spesifik Kelas</option>
                     {classes.map((c) => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
                 </div>
+
                 <div>
-                  <label htmlFor="student_id" className="block text-sm font-medium text-foreground mb-1.5">
-                    Siswa (Opsional)
+                  <label htmlFor="student_id" className="block text-xs font-bold text-[#555] mb-1.5">
+                    Target Siswa Perorangan (Opsional)
                   </label>
                   <select
                     id="student_id"
                     value={formData.student_id}
                     onChange={(e) => setFormData({ ...formData, student_id: e.target.value, class_id: "" })}
-                    className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-full px-3.5 py-2.5 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
                     disabled={isSubmitting || !!formData.class_id}
                   >
-                    <option value="">Pilih siswa</option>
+                    <option value="">Semua / Tidak Spesifik Siswa</option>
                     {students.map((s) => (
                       <option key={s.id} value={s.id}>{s.nis} - {s.full_name}</option>
                     ))}
                   </select>
                 </div>
               </div>
+
               <div>
-                <label htmlFor="description" className="block text-sm font-medium text-foreground mb-1.5">
-                  Deskripsi (Opsional)
+                <label htmlFor="description" className="block text-xs font-bold text-[#555] mb-1.5">
+                  Deskripsi / Keterangan Templat
                 </label>
                 <textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="Deskripsi tagihan..."
+                  placeholder="Keterangan opsional untuk templat ini..."
+                  className="w-full px-3.5 py-2.5 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
                   rows={3}
                   disabled={isSubmitting}
                 />
               </div>
-              <div className="flex items-center gap-2">
+
+              <div className="flex items-center gap-2 p-3.5 bg-[#F5F3EC] rounded-xl border border-[#E5E0D8]">
                 <input
                   id="is_recurring"
                   type="checkbox"
                   checked={formData.is_recurring}
                   onChange={(e) => setFormData({ ...formData, is_recurring: e.target.checked })}
-                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                  className="h-4 w-4 rounded border-[#E5E0D8] text-[#0C3B2E] focus:ring-[#0C3B2E]"
                   disabled={isSubmitting}
                 />
-                <label htmlFor="is_recurring" className="text-sm font-medium text-foreground">
-                  Tagihan berulang
+                <label htmlFor="is_recurring" className="text-xs font-bold text-[#1A1A1A]">
+                  Tandai sebagai Tagihan Berulang (Recurring Billing)
                 </label>
               </div>
-              {submitError && (
-                <div className="rounded-md border border-danger/20 bg-danger/10 px-4 py-3">
-                  <p className="text-sm text-danger">{submitError}</p>
-                </div>
-              )}
-              <div className="flex items-center gap-3">
+
+              <div className="flex items-center gap-2 pt-2">
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="inline-flex items-center gap-1.5 h-10 px-4 rounded-md bg-primary text-white text-sm font-semibold hover:bg-primary-dark active:scale-[0.98] transition-all min-h-[44px]"
+                  className="px-4 py-2 bg-[#0C3B2E] text-white text-xs font-bold rounded-xl hover:bg-[#10523E] disabled:opacity-50 inline-flex items-center gap-2"
                 >
-                  {isSubmitting ? "Menyimpan..." : (formState === "create" ? "Buat Templat" : "Simpan Perubahan")}
+                  {isSubmitting && (
+                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  )}
+                  {isSubmitting ? "Menyimpan..." : formState === "create" ? "Simpan Templat" : "Simpan Perubahan"}
                 </button>
                 <button
                   type="button"
-                  onClick={() => { resetForm(); setFormState("list"); setEditingId(null); }}
+                  onClick={() => {
+                    resetForm();
+                    setFormState("list");
+                    setEditingId(null);
+                  }}
                   disabled={isSubmitting}
-                  className="inline-flex items-center gap-1.5 h-10 px-4 rounded-md border border-border bg-surface text-sm font-semibold hover:bg-muted/10 transition-all min-h-[44px]"
+                  className="px-4 py-2 bg-[#F5F3EC] border border-[#E5E0D8] text-xs font-bold text-[#1A1A1A] rounded-xl"
                 >
                   Batal
                 </button>
               </div>
             </form>
-          </Card>
-        ) : (
-          <div className="flex justify-end">
-            <button
-              onClick={() => { resetForm(); setFormState("create"); }}
-              className="inline-flex items-center gap-1.5 h-10 px-4 rounded-md bg-primary text-white text-sm font-semibold hover:bg-primary-dark active:scale-[0.98] transition-all min-h-[44px]"
-            >
-              Buat Templat Baru
-            </button>
           </div>
         )}
 
+        {/* LIST TABLE */}
         {formState === "list" && (
-          <Card>
-            <DataTable
-              data={templates}
-              columns={columns}
-              keyExtractor={(item) => item.id}
-              isLoading={isLoading}
-              emptyState={
-                <div className="text-center py-8">
-                  <p className="text-sm text-muted">Belum ada templat tagihan.</p>
-                </div>
-              }
-            />
-          </Card>
+          <div className="bg-white p-4 sm:p-5 rounded-[20px] border border-[#E5E0D8] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+            {isLoading ? (
+              <TableSkeleton rows={4} columns={4} />
+            ) : (
+              <DataTable
+                columns={columns}
+                data={templates}
+                keyExtractor={(item) => item.id}
+                emptyTitle="Belum Ada Templat Tagihan"
+                emptyDescription="Buat templat tagihan untuk memudahkan pembuatan tagihan rutin kelas atau siswa."
+                emptyIcon={<ScrollText className="h-6 w-6 text-[#7A7A7A]" />}
+              />
+            )}
+          </div>
         )}
       </div>
     </PageContainer>

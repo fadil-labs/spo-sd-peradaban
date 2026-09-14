@@ -28,6 +28,7 @@ export async function getBillTemplatesAction() {
     redirect("/dashboard/admin");
   }
 
+  // Menggunakan eksplisit relasi foreign key hint untuk menghindari error ambiguous relationship
   const { data: templates, error: templatesError } = await supabase
     .from("bill_templates")
     .select(`
@@ -41,15 +42,19 @@ export async function getBillTemplatesAction() {
       is_recurring,
       created_at,
       updated_at,
-      payment_categories (id, name),
-      classes (id, name),
-      students (id, nis, full_name)
+      payment_categories:payment_category_id (id, name),
+      classes:class_id (id, name),
+      students:student_id (id, nis, full_name)
     `)
     .eq("school_id", profile.school_id)
     .order("created_at", { ascending: false });
 
   if (templatesError) {
-    return { error: "Gagal memuat data templat tagihan." };
+    console.error("[getBillTemplatesAction Error]:", templatesError);
+    if (templatesError.code === "42P01") {
+      return { templates: [] };
+    }
+    return { error: `Gagal memuat data templat tagihan: ${templatesError.message}` };
   }
 
   const normalized = (templates || []).map((t: Record<string, unknown>) => ({
@@ -111,6 +116,13 @@ export async function createBillTemplateAction(formData: FormData) {
     return { error: "Jumlah harus diisi dengan angka yang valid." };
   }
 
+  // Validasi agar tidak global / kosong kedua targetnya
+  if (!classId && !studentId) {
+    return { 
+      error: "Silakan pilih Target Kelas atau Target Siswa Perorangan terlebih dahulu. Nominal tagihan wajib dispesifikasikan per kelas atau per siswa." 
+    };
+  }
+
   if (classId && studentId) {
     return { error: "Templat tidak boleh untuk kelas dan siswa sekaligus. Pilih salah satu." };
   }
@@ -126,10 +138,14 @@ export async function createBillTemplateAction(formData: FormData) {
   });
 
   if (error) {
+    console.error("[createBillTemplateAction Error]:", error);
     if (error.code === "23503") {
       return { error: "Kategori pembayaran, kelas, atau siswa tidak valid." };
     }
-    return { error: "Gagal membuat templat tagihan. Silakan coba lagi." };
+    if (error.code === "42P01") {
+      return { error: "Tabel database 'bill_templates' belum dibuat di Supabase." };
+    }
+    return { error: `Gagal membuat templat tagihan: ${error.message}` };
   }
 
   return { success: true };
@@ -180,6 +196,13 @@ export async function updateBillTemplateAction(formData: FormData) {
     return { error: "Jumlah harus diisi dengan angka yang valid." };
   }
 
+  // Validasi agar tidak global / kosong kedua targetnya
+  if (!classId && !studentId) {
+    return { 
+      error: "Silakan pilih Target Kelas atau Target Siswa Perorangan terlebih dahulu. Nominal tagihan wajib dispesifikasikan per kelas atau per siswa." 
+    };
+  }
+
   if (classId && studentId) {
     return { error: "Templat tidak boleh untuk kelas dan siswa sekaligus. Pilih salah satu." };
   }
@@ -198,10 +221,11 @@ export async function updateBillTemplateAction(formData: FormData) {
     .eq("school_id", profile.school_id);
 
   if (error) {
+    console.error("[updateBillTemplateAction Error]:", error);
     if (error.code === "23503") {
       return { error: "Kategori pembayaran, kelas, atau siswa tidak valid." };
     }
-    return { error: "Gagal memperbarui templat tagihan. Silakan coba lagi." };
+    return { error: `Gagal memperbarui templat tagihan: ${error.message}` };
   }
 
   return { success: true };
@@ -239,7 +263,8 @@ export async function deleteBillTemplateAction(id: string) {
     .eq("school_id", profile.school_id);
 
   if (error) {
-    return { error: "Gagal menghapus templat tagihan. Silakan coba lagi." };
+    console.error("[deleteBillTemplateAction Error]:", error);
+    return { error: `Gagal menghapus templat tagihan: ${error.message}` };
   }
 
   return { success: true };

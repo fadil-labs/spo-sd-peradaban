@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
-import { getAdminPaymentReceiptAction } from "../../../student-bills/actions";
+import { getAdminPaymentReceiptAction } from "../../actions"; // <-- Diubah dari student-bills menjadi folder payments langsung
 import PaymentReceiptClient from "./PaymentReceiptClient";
 
 export default async function AdminPaymentReceiptPage({ params }: { params: Promise<{ paymentId: string }> }) {
@@ -18,7 +18,7 @@ export default async function AdminPaymentReceiptPage({ params }: { params: Prom
   }
 
   return (
-      <Suspense fallback={<TableSkeleton rows={5} columns={5} />}>
+    <Suspense fallback={<TableSkeleton rows={5} columns={5} />}>
       <PaymentReceiptClient receipt={result} />
     </Suspense>
   );

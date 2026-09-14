@@ -80,6 +80,16 @@ export async function GET(request: Request) {
         is_active: schoolMethod.is_active as boolean,
       };
     });
+
+    const seen = new Set<string>();
+    methods = methods.filter((method) => {
+      const key = method.name;
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
   }
 
   return NextResponse.json({ methods });

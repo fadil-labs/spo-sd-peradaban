@@ -2,13 +2,24 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { PageHeader } from "@/components/operational/PageHeader";
-import { Card } from "@/components/ui/card";
 import { DataTable } from "@/components/operational/data-table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { useToast } from "@/components/ui/toast";
-import { getPaymentCategoriesAction, createPaymentCategoryAction, updatePaymentCategoryAction, deletePaymentCategoryAction } from "./actions";
-import { Pencil, Trash2 } from "lucide-react";
+import {
+  getPaymentCategoriesAction,
+  createPaymentCategoryAction,
+  updatePaymentCategoryAction,
+  deletePaymentCategoryAction,
+} from "./actions";
+import {
+  Pencil,
+  Trash2,
+  PlusCircle,
+  X,
+  Search,
+  Layers,
+  Check,
+} from "lucide-react";
 
 type PaymentCategory = {
   id: string;
@@ -29,6 +40,7 @@ export default function PaymentCategoriesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -86,7 +98,7 @@ export default function PaymentCategoriesPage() {
       setSubmitError(result.error);
       toast.addToast("error", result.error);
     } else {
-      toast.addToast("success", "Kategori berhasil dibuat.");
+      toast.addToast("success", "Kategori pembayaran berhasil dibuat.");
       resetForm();
       setFormState("list");
       loadCategories();
@@ -113,7 +125,7 @@ export default function PaymentCategoriesPage() {
       setSubmitError(result.error);
       toast.addToast("error", result.error);
     } else {
-      toast.addToast("success", "Kategori berhasil diperbarui.");
+      toast.addToast("success", "Kategori pembayaran berhasil diperbarui.");
       resetForm();
       setFormState("list");
       setEditingId(null);
@@ -123,11 +135,12 @@ export default function PaymentCategoriesPage() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!window.confirm("Apakah Anda yakin ingin menghapus kategori pembayaran ini?")) return;
     const result = await deletePaymentCategoryAction(id);
     if (result?.error) {
       toast.addToast("error", result.error);
     } else {
-      toast.addToast("success", "Kategori berhasil dihapus.");
+      toast.addToast("success", "Kategori pembayaran berhasil dihapus.");
       loadCategories();
     }
   };
@@ -145,32 +158,48 @@ export default function PaymentCategoriesPage() {
   };
 
   const formatCurrency = (value: number | null) =>
-    value ? new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(value) : "-";
+    value
+      ? new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(value)
+      : "-";
+
+  const filteredCategories = categories.filter((c) =>
+    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (c.description && c.description.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
   const columns = [
     {
       key: "name",
-      header: "Kategori",
-      sortable: true,
+      header: "Kategori Pembayaran",
       render: (item: PaymentCategory) => (
         <div>
-          <p className="font-medium text-foreground">{item.name}</p>
-          {item.description && <p className="text-xs text-muted mt-0.5">{item.description}</p>}
+          <p className="font-bold text-[#1A1A1A] text-xs sm:text-sm">{item.name}</p>
+          {item.description && (
+            <p className="text-[11px] text-[#7A7A7A] mt-0.5 line-clamp-1">{item.description}</p>
+          )}
         </div>
       ),
     },
     {
       key: "installments",
-      header: "Cicilan",
+      header: "Aturan Cicilan",
       render: (item: PaymentCategory) => (
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-1">
           {item.allow_installments ? (
-            <span className="inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">Cicilan</span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="inline-block px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-[#0C3B2E]/10 text-[#0C3B2E]">
+                Cicilan Diizinkan
+              </span>
+              {item.minimum_installment_amount && (
+                <span className="text-[11px] font-semibold text-[#7A7A7A]">
+                  Min: {formatCurrency(item.minimum_installment_amount)}
+                </span>
+              )}
+            </div>
           ) : (
-            <span className="text-xs text-muted">Tidak</span>
-          )}
-          {item.minimum_installment_amount && (
-            <span className="text-xs text-muted">Min. {formatCurrency(item.minimum_installment_amount)}</span>
+            <span className="inline-block px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-[#7A7A7A]/10 text-[#7A7A7A]">
+              Tidak Ada Cicilan
+            </span>
           )}
         </div>
       ),
@@ -185,15 +214,15 @@ export default function PaymentCategoriesPage() {
           <button
             onClick={() => startEdit(item)}
             disabled={isSubmitting}
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border bg-surface text-xs font-semibold hover:bg-muted/10 transition-all active:scale-[0.98] min-h-[44px]"
+            className="px-3 py-1.5 bg-[#F5F3EC] border border-[#E5E0D8] text-[#1A1A1A] text-xs font-semibold rounded-xl hover:bg-[#EAE6DC] transition-colors inline-flex items-center gap-1.5"
           >
-            <Pencil className="h-3.5 w-3.5" />
+            <Pencil className="h-3.5 w-3.5 text-[#0C3B2E]" />
             Edit
           </button>
           <button
             onClick={() => handleDelete(item.id)}
             disabled={isSubmitting}
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-danger text-danger text-xs font-semibold hover:bg-danger/10 transition-all active:scale-[0.98] min-h-[44px]"
+            className="px-3 py-1.5 bg-[#A83A32]/10 border border-[#A83A32]/30 text-[#A83A32] text-xs font-semibold rounded-xl hover:bg-[#A83A32] hover:text-white transition-colors inline-flex items-center gap-1.5"
           >
             <Trash2 className="h-3.5 w-3.5" />
             Hapus
@@ -204,157 +233,234 @@ export default function PaymentCategoriesPage() {
   ];
 
   return (
-    <PageContainer>
-      <div className="flex flex-col gap-6">
-        <PageHeader
-          title="Kategori Pembayaran"
-          description="Kelola kategori pembayaran dan aturan cicilan"
-          primaryAction={
-            formState === "list"
-              ? { label: "Tambah Kategori", onClick: () => { resetForm(); setFormState("create"); } }
-              : undefined
-          }
-        />
+    <PageContainer className="bg-[#F5F3EC] min-h-screen p-3 sm:p-5 md:p-6 text-[#1A1A1A]">
+      <div className="flex flex-col gap-5 sm:gap-6 max-w-[1600px] mx-auto">
+        {/* HEADER */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-5 rounded-[20px] border border-[#E5E0D8] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-[#1A1A1A] tracking-tight">
+              Kategori Pembayaran
+            </h1>
+            <p className="text-xs sm:text-sm text-[#7A7A7A] mt-0.5">
+              Atur jenis tagihan sekolah (SPP, Gedung, Seragam) beserta skema cicilannya.
+            </p>
+          </div>
 
+          <div>
+            {formState === "list" ? (
+              <button
+                onClick={() => {
+                  resetForm();
+                  setFormState("create");
+                }}
+                className="px-4 py-2.5 bg-[#0C3B2E] text-white text-xs font-bold rounded-xl hover:bg-[#10523E] transition-all shadow-sm inline-flex items-center gap-2"
+              >
+                <PlusCircle className="h-4 w-4" />
+                <span>Tambah Kategori</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  resetForm();
+                  setFormState("list");
+                  setEditingId(null);
+                }}
+                className="px-4 py-2 bg-[#F5F3EC] border border-[#E5E0D8] text-[#1A1A1A] text-xs font-bold rounded-xl hover:bg-[#EAE6DC] transition-colors inline-flex items-center gap-1.5"
+              >
+                <X className="h-4 w-4" />
+                <span>Batal</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* ALERTS */}
         {error && (
-          <div className="rounded-md border border-danger/20 bg-danger/10 px-4 py-3">
-            <p className="text-sm text-danger">{error}</p>
+          <div className="rounded-2xl border border-[#A83A32]/30 bg-[#A83A32]/10 p-4">
+            <p className="text-xs sm:text-sm font-semibold text-[#A83A32]">{error}</p>
           </div>
         )}
 
         {submitError && (
-          <div className="rounded-md border border-danger/20 bg-danger/10 px-4 py-3">
-            <p className="text-sm text-danger">{submitError}</p>
+          <div className="rounded-2xl border border-[#A83A32]/30 bg-[#A83A32]/10 p-4">
+            <p className="text-xs sm:text-sm font-semibold text-[#A83A32]">{submitError}</p>
           </div>
         )}
 
+        {/* FORM CREATE / EDIT */}
         {(formState === "create" || formState === "edit") && (
-          <Card>
-            <h3 className="text-base font-semibold text-foreground mb-4">
-              {formState === "create" ? "Tambah Kategori Pembayaran" : "Edit Kategori Pembayaran"}
+          <div className="bg-white p-5 sm:p-6 rounded-[20px] border border-[#E5E0D8] shadow-[0_2px_10px_rgba(0,0,0,0.02)] space-y-5">
+            <h3 className="text-base font-bold text-[#1A1A1A]">
+              {formState === "create" ? "Tambah Kategori Pembayaran Baru" : "Edit Kategori Pembayaran"}
             </h3>
+
             <form className="space-y-4" onSubmit={formState === "create" ? handleCreate : handleUpdate}>
               <div>
-                 <label htmlFor="name" className="block text-xs text-muted mb-1.5">
+                <label htmlFor="name" className="block text-xs font-bold text-[#555] mb-1.5">
                   Nama Kategori
                 </label>
-                 <input
-                   id="name"
-                   type="text"
-                   value={formData.name}
-                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                   className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                   placeholder="Contoh: SPP"
-                   required
-                   disabled={isSubmitting}
-                 />
+                <input
+                  id="name"
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="Contoh: SPP Bulanan, Uang Gedung, Seragam"
+                  className="w-full px-3.5 py-2.5 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
+                  required
+                  disabled={isSubmitting}
+                />
               </div>
 
               <div>
-                 <label htmlFor="description" className="block text-xs text-muted mb-1.5">
-                  Deskripsi
+                <label htmlFor="description" className="block text-xs font-bold text-[#555] mb-1.5">
+                  Deskripsi / Keterangan
                 </label>
                 <textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  rows={2}
+                  placeholder="Tuliskan keterangan mengenai alokasi atau ketentuan pembayaran ini..."
+                  className="w-full px-3.5 py-2.5 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
+                  rows={3}
                   maxLength={500}
                   disabled={isSubmitting}
                 />
               </div>
 
-              <div className="flex items-center gap-2">
-                <input
-                  id="allow_installments"
-                  type="checkbox"
-                  checked={formData.allow_installments}
-                  onChange={(e) => setFormData({ ...formData, allow_installments: e.target.checked })}
-                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-                  disabled={isSubmitting}
-                />
-                <label htmlFor="allow_installments" className="text-sm text-foreground">
-                  Izinkan pembayaran cicilan
-                </label>
+              <div className="p-4 bg-[#F5F3EC] rounded-2xl border border-[#E5E0D8] space-y-3">
+                <div className="flex items-center gap-2">
+                  <input
+                    id="allow_installments"
+                    type="checkbox"
+                    checked={formData.allow_installments}
+                    onChange={(e) =>
+                      setFormData({ ...formData, allow_installments: e.target.checked })
+                    }
+                    className="h-4 w-4 rounded border-[#E5E0D8] text-[#0C3B2E] focus:ring-[#0C3B2E]"
+                    disabled={isSubmitting}
+                  />
+                  <label htmlFor="allow_installments" className="text-xs font-bold text-[#1A1A1A]">
+                    Izinkan Pembayaran Dicicil (Beberapa Kali Bayar)
+                  </label>
+                </div>
+
+                {formData.allow_installments && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-[#EAE6DC]">
+                    <div>
+                      <label
+                        htmlFor="minimum_installment_amount"
+                        className="block text-xs font-bold text-[#555] mb-1"
+                      >
+                        Nominal Cicilan Minimum (Rp)
+                      </label>
+                      <input
+                        id="minimum_installment_amount"
+                        type="number"
+                        value={formData.minimum_installment_amount}
+                        onChange={(e) =>
+                          setFormData({ ...formData, minimum_installment_amount: e.target.value })
+                        }
+                        placeholder="Contoh: 100000"
+                        className="w-full px-3.5 py-2.5 bg-white border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
+                        min="0"
+                        step="1000"
+                        required={formData.allow_installments}
+                        disabled={isSubmitting}
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-5">
+                      <input
+                        id="require_installment_schedule"
+                        type="checkbox"
+                        checked={formData.require_installment_schedule}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            require_installment_schedule: e.target.checked,
+                          })
+                        }
+                        className="h-4 w-4 rounded border-[#E5E0D8] text-[#0C3B2E] focus:ring-[#0C3B2E]"
+                        disabled={isSubmitting}
+                      />
+                      <label
+                        htmlFor="require_installment_schedule"
+                        className="text-xs font-bold text-[#1A1A1A]"
+                      >
+                        Wajibkan Jadwal Cicilan Terjadwal
+                      </label>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {formData.allow_installments && (
-                <>
-                  <div>
-                     <label htmlFor="minimum_installment_amount" className="block text-xs text-muted mb-1.5">
-                      Jumlah Cicilan Minimum
-                    </label>
-                     <input
-                       id="minimum_installment_amount"
-                       type="number"
-                       value={formData.minimum_installment_amount}
-                       onChange={(e) => setFormData({ ...formData, minimum_installment_amount: e.target.value })}
-                       className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                       placeholder="0"
-                       min="0"
-                       step="1000"
-                       required={formData.allow_installments}
-                       disabled={isSubmitting}
-                     />
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <input
-                      id="require_installment_schedule"
-                      type="checkbox"
-                      checked={formData.require_installment_schedule}
-                      onChange={(e) => setFormData({ ...formData, require_installment_schedule: e.target.checked })}
-                      className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-                      disabled={isSubmitting}
-                    />
-                    <label htmlFor="require_installment_schedule" className="text-sm text-foreground">
-                      Wajibkan jadwal cicilan
-                    </label>
-                  </div>
-                </>
-              )}
-
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 pt-2">
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                    className="h-10 px-4 rounded-md bg-primary text-white text-sm font-semibold hover:bg-primary-dark active:scale-[0.98] transition-all focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 inline-flex items-center gap-2 min-h-[44px]"
+                  className="px-4 py-2 bg-[#0C3B2E] text-white text-xs font-bold rounded-xl hover:bg-[#10523E] disabled:opacity-50 inline-flex items-center gap-2"
                 >
-                  {isSubmitting && <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />}
-                  {isSubmitting ? "Menyimpan..." : "Simpan"}
+                  {isSubmitting && (
+                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  )}
+                  {isSubmitting ? "Menyimpan..." : "Simpan Kategori"}
                 </button>
                 <button
                   type="button"
-                  onClick={() => { resetForm(); setFormState("list"); setEditingId(null); }}
+                  onClick={() => {
+                    resetForm();
+                    setFormState("list");
+                    setEditingId(null);
+                  }}
                   disabled={isSubmitting}
-                   className="h-10 px-4 rounded-md border border-border bg-surface text-sm font-semibold hover:bg-muted/10 transition-colors min-h-[44px]"
+                  className="px-4 py-2 bg-[#F5F3EC] border border-[#E5E0D8] text-xs font-bold text-[#1A1A1A] rounded-xl"
                 >
                   Batal
                 </button>
               </div>
             </form>
-          </Card>
+          </div>
         )}
 
+        {/* LIST TABLE */}
         {formState === "list" && (
           <>
-            {isLoading ? (
-              <TableSkeleton rows={5} columns={3} />
-            ) : (
-              <DataTable
-                columns={columns}
-                data={categories}
-                keyExtractor={(item) => item.id}
-                emptyTitle="Belum ada kategori pembayaran"
-                emptyDescription="Buat kategori pembayaran pertama."
-                emptyIcon={
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m-6 0h-.375c-.621 0-1.125-.504-1.125-1.125v-9.75c0-.621.504-1.125 1.125-1.125h.375m6 0h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m-6 0h-.375c-.621 0-1.125-.504-1.125-1.125v-9.75c0-.621.504-1.125 1.125-1.125h.375" />
-                  </svg>
-                }
-              />
-            )}
+            <div className="rounded-[20px] border border-[#E5E0D8] bg-white p-4 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex items-center justify-between gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#8A8A8A]" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Cari kategori pembayaran..."
+                  className="w-full pl-10 pr-4 py-2 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs font-medium text-[#1A1A1A] focus:outline-none focus:border-[#0C3B2E]"
+                />
+              </div>
+
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="px-3 py-2 bg-[#F5F3EC] border border-[#E5E0D8] text-xs font-bold text-[#1A1A1A] rounded-xl hover:bg-[#EAE6DC]"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+
+            <div className="rounded-[20px] border border-[#E5E0D8] bg-white p-4 sm:p-5 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+              {isLoading ? (
+                <TableSkeleton rows={4} columns={3} />
+              ) : (
+                <DataTable
+                  columns={columns}
+                  data={filteredCategories}
+                  keyExtractor={(item) => item.id}
+                  emptyTitle="Belum Ada Kategori Pembayaran"
+                  emptyDescription="Buat kategori seperti SPP, Uang Gedung, atau Seragam untuk mulai menagih."
+                />
+              )}
+            </div>
           </>
         )}
       </div>

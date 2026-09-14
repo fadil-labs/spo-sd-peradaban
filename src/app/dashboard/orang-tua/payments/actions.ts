@@ -332,10 +332,22 @@ export async function getParentBillDetailAction(billId: string) {
     }
 
     return {
-      ...p,
+      id: p.id as string,
+      amount: p.amount as number,
+      payment_date: p.payment_date as string,
+      reference_number: (p.reference_number as string | null) ?? null,
       status: currentStatus,
-      payment_methods: method || null,
-      payment_proofs: proof || null,
+      payment_methods: method ? {
+        id: method.id as string,
+        name: method.name as string,
+        method_type: method.method_type as string,
+      } : null,
+      payment_proofs: proof ? {
+        id: proof.id as string,
+        status: proof.status as string,
+        rejection_reason: (proof.rejection_reason as string | null) ?? null,
+        created_at: proof.created_at as string,
+      } : null,
     };
   });
 
@@ -607,7 +619,7 @@ export async function simulateParentWebhookAction(gatewayTransactionId: string) 
 }
 
 export async function uploadPaymentProofAction(paymentId: string, file: File) {
-  return { success: true };
+  return { success: true, error: undefined };
 }
 
 export async function getParentPaymentReceiptAction(paymentId: string) {

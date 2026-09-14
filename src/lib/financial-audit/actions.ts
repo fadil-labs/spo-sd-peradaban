@@ -18,6 +18,8 @@ export type FinancialAuditActionType =
   | "bill_status_changed"
   | "payment_method_toggled"
   | "financial_config_changed"
+  | "installment_plan_created"
+  | "installment_plan_removed"
   | "other";
 
 export type FinancialAuditEntityType =

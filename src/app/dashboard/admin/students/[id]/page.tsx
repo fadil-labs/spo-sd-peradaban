@@ -1,18 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { PageHeader } from "@/components/operational/PageHeader";
-import { Card } from "@/components/ui/card";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { getStudentAction } from "../actions";
-import { User, Users, GraduationCap } from "lucide-react";
+import { User, Users, GraduationCap, ArrowLeft, Calendar, MapPin, Phone, Mail } from "lucide-react";
 
 type GuardianLink = {
   id: string;
   relationship: string;
-  profiles: { id: string; full_name: string; email: string; phone: string; role: string }[];
+  profiles: { id: string; full_name: string; email: string; phone: string; role: string };
 };
 
 type EnrollmentItem = {
@@ -60,36 +58,42 @@ type StudentDetail = {
 type Tab = "profil" | "orangtua" | "enrollment";
 
 const TABS: { key: Tab; label: string; icon: React.ElementType }[] = [
-  { key: "profil", label: "Profil", icon: User },
-  { key: "orangtua", label: "Orang Tua", icon: Users },
-  { key: "enrollment", label: "Enrollment", icon: GraduationCap },
+  { key: "profil", label: "Profil Siswa", icon: User },
+  { key: "orangtua", label: "Orang Tua / Wali", icon: Users },
+  { key: "enrollment", label: "Riwayat Kelas", icon: GraduationCap },
 ];
 
 function StudentDetailPageInner({ studentId }: { studentId: string }) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>("profil");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<StudentDetail | null>(null);
 
   const formatDate = (date: string | null) =>
-    date ? new Date(date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "-";
+    date
+      ? new Date(date).toLocaleDateString("id-ID", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        })
+      : "-";
 
   const getStatusBadge = (status: string) => {
-    const styles: Record<string, string> = {
-      active: "bg-green-100 text-green-700",
-      inactive: "bg-gray-100 text-gray-700",
-      graduated: "bg-blue-100 text-blue-700",
-      transferred: "bg-yellow-100 text-yellow-700",
+    const labels: Record<string, { label: string; bg: string; text: string }> = {
+      active: { label: "Aktif", bg: "bg-[#0C3B2E]/10", text: "text-[#0C3B2E]" },
+      inactive: { label: "Tidak Aktif", bg: "bg-[#7A7A7A]/10", text: "text-[#7A7A7A]" },
+      graduated: { label: "Lulus", bg: "bg-[#2563EB]/10", text: "text-[#2563EB]" },
+      transferred: { label: "Pindah", bg: "bg-[#C28E38]/10", text: "text-[#C28E38]" },
     };
-    const labels: Record<string, string> = {
-      active: "Aktif",
-      inactive: "Tidak Aktif",
-      graduated: "Lulus",
-      transferred: "Pindah",
+    const conf = labels[status] || {
+      label: status,
+      bg: "bg-gray-100",
+      text: "text-gray-700",
     };
     return (
-      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${styles[status] || "bg-gray-100 text-gray-700"}`}>
-        {labels[status] || status}
+      <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${conf.bg} ${conf.text}`}>
+        {conf.label}
       </span>
     );
   };
@@ -102,7 +106,7 @@ function StudentDetailPageInner({ studentId }: { studentId: string }) {
       setError(null);
       const result = await getStudentAction(studentId);
       if (!isMounted) return;
-      if ("error" in result) {
+      if ("error" in result && typeof result.error === "string") {
         setError(result.error);
       } else {
         setData(result as StudentDetail);
@@ -118,21 +122,19 @@ function StudentDetailPageInner({ studentId }: { studentId: string }) {
 
   if (isLoading) {
     return (
-      <PageContainer>
-        <div className="flex flex-col gap-6">
-          <TableSkeleton rows={5} columns={4} />
-        </div>
+      <PageContainer className="bg-[#F5F3EC] min-h-screen p-4 sm:p-6 text-[#1A1A1A]">
+        <TableSkeleton rows={5} columns={4} />
       </PageContainer>
     );
   }
 
   if (error || !data) {
     return (
-      <PageContainer>
-        <div className="flex flex-col gap-6">
-          <Card className="px-4 py-3 border-danger/20 bg-danger/10">
-            <p className="text-sm text-danger">{error || "Siswa tidak ditemukan."}</p>
-          </Card>
+      <PageContainer className="bg-[#F5F3EC] min-h-screen p-4 sm:p-6 text-[#1A1A1A]">
+        <div className="rounded-2xl border border-[#A83A32]/30 bg-[#A83A32]/10 p-4">
+          <p className="text-xs sm:text-sm font-semibold text-[#A83A32]">
+            {error || "Siswa tidak ditemukan."}
+          </p>
         </div>
       </PageContainer>
     );
@@ -141,156 +143,183 @@ function StudentDetailPageInner({ studentId }: { studentId: string }) {
   const { student, guardians, enrollments } = data;
 
   return (
-    <PageContainer>
-      <div className="flex flex-col gap-6">
-        <PageHeader
-          title={student.full_name}
-          description={`NIS: ${student.nis} ${student.nisn ? `| NISN: ${student.nisn}` : ""}`}
-        />
-
-        <div className="flex items-center gap-2 border-b border-border">
-          {TABS.map((tab) => (
+    <PageContainer className="bg-[#F5F3EC] min-h-screen p-3 sm:p-5 md:p-6 text-[#1A1A1A]">
+      <div className="flex flex-col gap-5 sm:gap-6 max-w-[1600px] mx-auto">
+        {/* HEADER CONTAINER */}
+        <div className="bg-white p-5 rounded-[20px] border border-[#E5E0D8] shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-start gap-3">
             <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === tab.key
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted hover:text-foreground"
-              }`}
+              onClick={() => router.push("/dashboard/admin/students")}
+              className="p-2 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl hover:bg-[#EAE6DC] transition-colors mt-0.5"
             >
-              <tab.icon className="h-4 w-4" />
-              {tab.label}
+              <ArrowLeft className="h-4 w-4 text-[#1A1A1A]" />
             </button>
-          ))}
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl sm:text-2xl font-extrabold text-[#1A1A1A] tracking-tight">
+                  {student.full_name}
+                </h1>
+                {getStatusBadge(student.status)}
+              </div>
+              <p className="text-xs sm:text-sm text-[#7A7A7A] mt-0.5">
+                NIS: <span className="font-bold text-[#1A1A1A]">{student.nis}</span>{" "}
+                {student.nisn && (
+                  <>
+                    | NISN: <span className="font-bold text-[#1A1A1A]">{student.nisn}</span>
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
         </div>
 
+        {/* TAB BUTTONS */}
+        <div className="flex items-center gap-1 bg-white p-1.5 rounded-2xl border border-[#E5E0D8] shadow-sm overflow-x-auto">
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            const active = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                  active
+                    ? "bg-[#0C3B2E] text-white shadow-sm"
+                    : "text-[#666] hover:text-[#1A1A1A] hover:bg-[#F5F3EC]"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* TAB CONTENT: PROFIL */}
         {activeTab === "profil" && (
-          <Card>
-            <h3 className="text-base font-semibold text-foreground mb-4">Profil Siswa</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="text-xs text-muted mb-1">NIS</p>
-                <p className="text-foreground font-medium">{student.nis}</p>
+          <div className="bg-white p-5 rounded-[20px] border border-[#E5E0D8] shadow-[0_2px_10px_rgba(0,0,0,0.02)] space-y-4">
+            <h3 className="text-base font-bold text-[#1A1A1A]">Informasi Pribadi & Kontak</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+              <div className="p-3 bg-[#F5F3EC] rounded-xl border border-[#E5E0D8]">
+                <span className="text-[#8A8A8A] font-medium block mb-1">NIS / NISN</span>
+                <span className="font-bold text-[#1A1A1A]">
+                  {student.nis} / {student.nisn || "-"}
+                </span>
               </div>
-              <div>
-                <p className="text-xs text-muted mb-1">NISN</p>
-                <p className="text-foreground font-medium">{student.nisn || "-"}</p>
+
+              <div className="p-3 bg-[#F5F3EC] rounded-xl border border-[#E5E0D8]">
+                <span className="text-[#8A8A8A] font-medium block mb-1">Jenis Kelamin</span>
+                <span className="font-bold text-[#1A1A1A]">
+                  {student.gender === "L"
+                    ? "Laki-laki"
+                    : student.gender === "P"
+                    ? "Perempuan"
+                    : "-"}
+                </span>
               </div>
-              <div>
-                <p className="text-xs text-muted mb-1">Nama Lengkap</p>
-                <p className="text-foreground font-medium">{student.full_name}</p>
+
+              <div className="p-3 bg-[#F5F3EC] rounded-xl border border-[#E5E0D8]">
+                <span className="text-[#8A8A8A] font-medium block mb-1">Tempat, Tanggal Lahir</span>
+                <span className="font-bold text-[#1A1A1A]">
+                  {student.birth_place || "-"}, {formatDate(student.birth_date)}
+                </span>
               </div>
-              <div>
-                <p className="text-xs text-muted mb-1">Jenis Kelamin</p>
-                <p className="text-foreground font-medium">{student.gender === "L" ? "Laki-laki" : student.gender === "P" ? "Perempuan" : "-"}</p>
+
+              <div className="p-3 bg-[#F5F3EC] rounded-xl border border-[#E5E0D8]">
+                <span className="text-[#8A8A8A] font-medium block mb-1">Agama</span>
+                <span className="font-bold text-[#1A1A1A]">{student.religion || "-"}</span>
               </div>
-              <div>
-                <p className="text-xs text-muted mb-1">Tempat Lahir</p>
-                <p className="text-foreground font-medium">{student.birth_place || "-"}</p>
+
+              <div className="p-3 bg-[#F5F3EC] rounded-xl border border-[#E5E0D8]">
+                <span className="text-[#8A8A8A] font-medium block mb-1">Anak Ke</span>
+                <span className="font-bold text-[#1A1A1A]">{student.child_order ?? "-"}</span>
               </div>
-              <div>
-                <p className="text-xs text-muted mb-1">Tanggal Lahir</p>
-                <p className="text-foreground font-medium">{formatDate(student.birth_date)}</p>
+
+              <div className="p-3 bg-[#F5F3EC] rounded-xl border border-[#E5E0D8]">
+                <span className="text-[#8A8A8A] font-medium block mb-1">No HP Siswa</span>
+                <span className="font-bold text-[#1A1A1A]">{student.student_phone || "-"}</span>
               </div>
-              <div>
-                <p className="text-xs text-muted mb-1">Agama</p>
-                <p className="text-foreground font-medium">{student.religion || "-"}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted mb-1">Status</p>
-                <div className="mt-1">{getStatusBadge(student.status)}</div>
-              </div>
-              <div className="sm:col-span-2">
-                <p className="text-xs text-muted mb-1">Alamat</p>
-                <p className="text-foreground font-medium">
-                  {[student.address_street, student.rt_rw, student.kelurahan, student.kecamatan, student.city, student.postal_code]
+
+              <div className="sm:col-span-2 lg:col-span-3 p-3 bg-[#F5F3EC] rounded-xl border border-[#E5E0D8]">
+                <span className="text-[#8A8A8A] font-medium block mb-1">Alamat Lengkap</span>
+                <span className="font-bold text-[#1A1A1A]">
+                  {[
+                    student.address_street,
+                    student.rt_rw,
+                    student.kelurahan,
+                    student.kecamatan,
+                    student.city,
+                    student.postal_code,
+                  ]
                     .filter(Boolean)
                     .join(", ") || student.address || "-"}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-muted mb-1">No Telepon Siswa</p>
-                <p className="text-foreground font-medium">{student.student_phone || "-"}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted mb-1">Email Siswa</p>
-                <p className="text-foreground font-medium">{student.student_email || "-"}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted mb-1">Anak Ke</p>
-                <p className="text-foreground font-medium">{student.child_order ?? "-"}</p>
+                </span>
               </div>
             </div>
-          </Card>
+          </div>
         )}
 
+        {/* TAB CONTENT: ORANG TUA */}
         {activeTab === "orangtua" && (
-          <Card>
-            <h3 className="text-base font-semibold text-foreground mb-4">Data Orang Tua / Wali</h3>
+          <div className="bg-white p-5 rounded-[20px] border border-[#E5E0D8] shadow-[0_2px_10px_rgba(0,0,0,0.02)] space-y-4">
+            <h3 className="text-base font-bold text-[#1A1A1A]">Data Orang Tua / Wali Terhubung</h3>
             {guardians.length === 0 ? (
-              <p className="text-sm text-muted">Belum ada data orang tua yang terhubung.</p>
+              <p className="text-xs text-[#7A7A7A]">Belum ada data orang tua yang terhubung.</p>
             ) : (
-              <div className="space-y-3">
-                {guardians.map((guardian) => {
-                  const profile = Array.isArray(guardian.profiles) ? guardian.profiles[0] : guardian.profiles;
-                  return (
-                    <div key={guardian.id} className="rounded-md border border-border p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{profile?.full_name ?? "-"}</p>
-                          <p className="text-xs text-muted mt-1 capitalize">{guardian.relationship}</p>
-                        </div>
-                        <span className="text-xs text-muted">{profile?.role ?? "-"}</span>
-                      </div>
-                      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                        <div>
-                          <p className="text-muted">Email</p>
-                          <p className="text-foreground">{profile?.email || "-"}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted">No HP</p>
-                          <p className="text-foreground">{profile?.phone || "-"}</p>
-                        </div>
-                      </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {guardians.map((guardian) => (
+                  <div
+                    key={guardian.id}
+                    className="p-4 rounded-2xl border border-[#E5E0D8] bg-[#FDFCF9] space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-bold text-[#1A1A1A]">
+                        {guardian.profiles?.full_name ?? "-"}
+                      </p>
+                      <span className="px-2 py-0.5 rounded bg-[#0C3B2E]/10 text-[#0C3B2E] text-[10px] font-bold capitalize">
+                        {guardian.relationship}
+                      </span>
                     </div>
-                  );
-                })}
+                    <div className="text-xs text-[#666] space-y-1 pt-1 border-t border-[#EAE6DC]">
+                      <p>Email: {guardian.profiles?.email || "-"}</p>
+                      <p>No HP: {guardian.profiles?.phone || "-"}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
-          </Card>
+          </div>
         )}
 
+        {/* TAB CONTENT: ENROLLMENT */}
         {activeTab === "enrollment" && (
-          <Card>
-            <h3 className="text-base font-semibold text-foreground mb-4">Riwayat Enrollment</h3>
+          <div className="bg-white p-5 rounded-[20px] border border-[#E5E0D8] shadow-[0_2px_10px_rgba(0,0,0,0.02)] space-y-4">
+            <h3 className="text-base font-bold text-[#1A1A1A]">Riwayat Pendaftaran & Kelas</h3>
             {enrollments.length === 0 ? (
-              <p className="text-sm text-muted">Belum ada data enrollment.</p>
+              <p className="text-xs text-[#7A7A7A]">Belum ada riwayat enrollment kelas.</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="px-3 py-2 text-left font-medium text-muted">Tahun Ajaran</th>
-                      <th className="px-3 py-2 text-left font-medium text-muted">Kelas</th>
-                      <th className="px-3 py-2 text-left font-medium text-muted">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {enrollments.map((enrollment) => (
-                      <tr key={enrollment.id} className="border-b border-border last:border-b-0">
-                        <td className="px-3 py-2 text-foreground">{enrollment.academic_year_name}</td>
-                        <td className="px-3 py-2 text-foreground">{enrollment.class_name}</td>
-                        <td className="px-3 py-2">
-                          <span className="capitalize">{enrollment.status}</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="space-y-2">
+                {enrollments.map((enr) => (
+                  <div
+                    key={enr.id}
+                    className="p-3.5 bg-[#F5F3EC] rounded-xl border border-[#E5E0D8] flex items-center justify-between"
+                  >
+                    <div>
+                      <p className="text-xs font-bold text-[#1A1A1A]">
+                        Kelas: {enr.class_name}
+                      </p>
+                      <p className="text-[11px] text-[#7A7A7A]">
+                        Tahun Ajaran: {enr.academic_year_name}
+                      </p>
+                    </div>
+                    <span className="px-2 py-0.5 rounded bg-[#0C3B2E]/10 text-[#0C3B2E] text-[10px] font-bold capitalize">
+                      {enr.status}
+                    </span>
+                  </div>
+                ))}
               </div>
             )}
-          </Card>
+          </div>
         )}
       </div>
     </PageContainer>
@@ -303,11 +332,11 @@ export default function StudentDetailPage() {
 
   if (!studentId) {
     return (
-      <PageContainer>
-        <div className="flex flex-col gap-6">
-          <Card className="px-4 py-3 border-danger/20 bg-danger/10">
-            <p className="text-sm text-danger">ID siswa tidak valid.</p>
-          </Card>
+      <PageContainer className="bg-[#F5F3EC] min-h-screen p-4 sm:p-6 text-[#1A1A1A]">
+        <div className="rounded-2xl border border-[#A83A32]/30 bg-[#A83A32]/10 p-4">
+          <p className="text-xs sm:text-sm font-semibold text-[#A83A32]">
+            ID siswa tidak valid.
+          </p>
         </div>
       </PageContainer>
     );

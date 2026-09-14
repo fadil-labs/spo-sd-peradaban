@@ -3,17 +3,31 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { PageHeader } from "@/components/operational/PageHeader";
-import { Card } from "@/components/ui/card";
-import { SearchInput } from "@/components/operational/search-input";
-import { StatusBadge } from "@/components/operational/StatusBadge";
 import { DataTable } from "@/components/operational/data-table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { useToast } from "@/components/ui/toast";
-import { getStudentsAction, createStudentAction, updateStudentAction, exportStudentsAction, importStudentsAction } from "./actions";
+import {
+  getStudentsAction,
+  createStudentAction,
+  updateStudentAction,
+  exportStudentsAction,
+  importStudentsAction,
+} from "./actions";
 import { createEnrollmentAction } from "../enrollments/actions";
 import { bulkLinkGuardianToStudentsAction, getGuardianSearchAction } from "../guardians/actions";
-import { Pencil, X, Download, Upload, CheckSquare, Square, UserSearch } from "lucide-react";
+import {
+  Pencil,
+  X,
+  Download,
+  Upload,
+  CheckSquare,
+  Square,
+  UserSearch,
+  UserPlus,
+  Search,
+  Users,
+  GraduationCap,
+} from "lucide-react";
 
 type Student = {
   id: string;
@@ -70,7 +84,19 @@ export default function StudentsPage() {
   const [isImporting, setIsImporting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
-  const [importResult, setImportResult] = useState<{ successCount: number; insertedCount: number; updatedCount: number; errorCount: number; results: { row: number; nis: string; full_name: string; status: "inserted" | "updated" | "error"; message?: string }[] } | null>(null);
+  const [importResult, setImportResult] = useState<{
+    successCount: number;
+    insertedCount: number;
+    updatedCount: number;
+    errorCount: number;
+    results: {
+      row: number;
+      nis: string;
+      full_name: string;
+      status: "inserted" | "updated" | "error";
+      message?: string;
+    }[];
+  } | null>(null);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [importAcademicYearId, setImportAcademicYearId] = useState("");
 
@@ -84,7 +110,9 @@ export default function StudentsPage() {
 
   const [showBulkGuardianForm, setShowBulkGuardianForm] = useState(false);
   const [guardianSearchQuery, setGuardianSearchQuery] = useState("");
-  const [guardianSearchResults, setGuardianSearchResults] = useState<{ guardian_profile_id: string; full_name: string; email: string; phone: string }[]>([]);
+  const [guardianSearchResults, setGuardianSearchResults] = useState<
+    { guardian_profile_id: string; full_name: string; email: string; phone: string }[]
+  >([]);
   const [selectedGuardianProfileId, setSelectedGuardianProfileId] = useState("");
   const [isLinkingGuardian, setIsLinkingGuardian] = useState(false);
 
@@ -93,7 +121,12 @@ export default function StudentsPage() {
   const loadStudents = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-    const result = await getStudentsAction(searchRef.current || undefined, statusFilter, pageRef.current, pageSize);
+    const result = await getStudentsAction(
+      searchRef.current || undefined,
+      statusFilter,
+      pageRef.current,
+      pageSize
+    );
     if ("error" in result) {
       setError(result.error || null);
     } else {
@@ -121,8 +154,16 @@ export default function StudentsPage() {
     if (!profile) return;
 
     const [{ data: yearsData }, { data: classesData }] = await Promise.all([
-      supabase.from("academic_years").select("id, name").eq("school_id", profile.school_id).order("name", { ascending: false }),
-      supabase.from("classes").select("id, name").eq("school_id", profile.school_id).order("name"),
+      supabase
+        .from("academic_years")
+        .select("id, name")
+        .eq("school_id", profile.school_id)
+        .order("name", { ascending: false }),
+      supabase
+        .from("classes")
+        .select("id, name")
+        .eq("school_id", profile.school_id)
+        .order("name"),
     ]);
 
     setAcademicYears(yearsData || []);
@@ -132,18 +173,14 @@ export default function StudentsPage() {
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     loadStudents();
-  }, [loadStudents]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+  }, [loadStudents, page, searchQuery, statusFilter]);
 
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (showBulkEnrollForm) {
       loadBulkEnrollLookups();
     }
   }, [showBulkEnrollForm, loadBulkEnrollLookups]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (showImportDialog) {
       loadBulkEnrollLookups();
@@ -225,20 +262,30 @@ export default function StudentsPage() {
     loadStudents();
   };
 
-  const handleGuardianSearch = useCallback(async (query: string) => {
-    setGuardianSearchQuery(query);
-    if (query.trim().length === 0) {
-      setGuardianSearchResults([]);
-      return;
-    }
-    const result = await getGuardianSearchAction(query.trim());
-    if ("error" in result) {
-      toast.addToast("error", result.error as string);
-      setGuardianSearchResults([]);
-    } else {
-      setGuardianSearchResults(result.guardians as { guardian_profile_id: string; full_name: string; email: string; phone: string }[]);
-    }
-  }, [toast]);
+  const handleGuardianSearch = useCallback(
+    async (query: string) => {
+      setGuardianSearchQuery(query);
+      if (query.trim().length === 0) {
+        setGuardianSearchResults([]);
+        return;
+      }
+      const result = await getGuardianSearchAction(query.trim());
+      if ("error" in result) {
+        toast.addToast("error", result.error as string);
+        setGuardianSearchResults([]);
+      } else {
+        setGuardianSearchResults(
+          result.guardians as {
+            guardian_profile_id: string;
+            full_name: string;
+            email: string;
+            phone: string;
+          }[]
+        );
+      }
+    },
+    [toast]
+  );
 
   const handleBulkLinkGuardian = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -256,7 +303,10 @@ export default function StudentsPage() {
     if ("error" in result) {
       toast.addToast("error", result.error as string);
     } else {
-      toast.addToast("success", `Berhasil menghubungkan ${result.linkedCount} siswa ke wali.`);
+      toast.addToast(
+        "success",
+        `Berhasil menghubungkan ${result.linkedCount} siswa ke wali.`
+      );
       setSelectedStudentIds(new Set());
       setSelectedGuardianProfileId("");
       setShowBulkGuardianForm(false);
@@ -353,7 +403,7 @@ export default function StudentsPage() {
   const handleImport = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!importFile) {
-      toast.addToast("error", "Pilih file CSV terlebih dahulu.");
+      toast.addToast("error", "Pilih file Excel/CSV terlebih dahulu.");
       return;
     }
 
@@ -382,7 +432,13 @@ export default function StudentsPage() {
   };
 
   const formatDate = (date: string | null) =>
-    date ? new Date(date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "-";
+    date
+      ? new Date(date).toLocaleDateString("id-ID", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        })
+      : "-";
 
   const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
 
@@ -396,12 +452,12 @@ export default function StudentsPage() {
             e.stopPropagation();
             toggleSelectAll();
           }}
-          className="inline-flex items-center justify-center"
+          className="inline-flex items-center justify-center p-1 hover:bg-[#F5F3EC] rounded"
         >
           {students.length > 0 && selectedStudentIds.size === students.length ? (
-            <CheckSquare className="h-4 w-4 text-primary" />
+            <CheckSquare className="h-4 w-4 text-[#0C3B2E]" />
           ) : (
-            <Square className="h-4 w-4 text-muted" />
+            <Square className="h-4 w-4 text-[#8A8A8A]" />
           )}
         </button>
       ),
@@ -412,22 +468,60 @@ export default function StudentsPage() {
             e.stopPropagation();
             toggleStudentSelection(item.id);
           }}
-          className="inline-flex items-center justify-center"
+          className="inline-flex items-center justify-center p-1 hover:bg-[#F5F3EC] rounded"
         >
           {selectedStudentIds.has(item.id) ? (
-            <CheckSquare className="h-4 w-4 text-primary" />
+            <CheckSquare className="h-4 w-4 text-[#0C3B2E]" />
           ) : (
-            <Square className="h-4 w-4 text-muted" />
+            <Square className="h-4 w-4 text-[#8A8A8A]" />
           )}
         </button>
       ),
-      className: "w-12 text-center",
+      className: "w-10 text-center",
       mobileHide: true,
     },
-    { key: "nis", header: "NIS", sortable: true },
-    { key: "full_name", header: "Nama", sortable: true },
-    { key: "birth_date", header: "Tanggal Lahir", render: (item: Student) => formatDate(item.birth_date), mobileHide: true },
-    { key: "status", header: "Status", render: (item: Student) => <StatusBadge status={item.status} /> },
+    {
+      key: "nis",
+      header: "NIS",
+      render: (item: Student) => <span className="font-semibold text-[#4A4A4A]">{item.nis}</span>,
+    },
+    {
+      key: "full_name",
+      header: "Nama Siswa",
+      render: (item: Student) => <span className="font-bold text-[#1A1A1A]">{item.full_name}</span>,
+    },
+    {
+      key: "birth_date",
+      header: "Tanggal Lahir",
+      render: (item: Student) => (
+        <span className="text-[#7A7A7A] text-xs">{formatDate(item.birth_date)}</span>
+      ),
+      mobileHide: true,
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (item: Student) => {
+        const labels: Record<string, { label: string; bg: string; text: string }> = {
+          active: { label: "Aktif", bg: "bg-[#0C3B2E]/10", text: "text-[#0C3B2E]" },
+          inactive: { label: "Tidak Aktif", bg: "bg-[#7A7A7A]/10", text: "text-[#7A7A7A]" },
+          graduated: { label: "Lulus", bg: "bg-[#2563EB]/10", text: "text-[#2563EB]" },
+          transferred: { label: "Pindah", bg: "bg-[#C28E38]/10", text: "text-[#C28E38]" },
+        };
+        const conf = labels[item.status] || {
+          label: item.status,
+          bg: "bg-gray-100",
+          text: "text-gray-700",
+        };
+        return (
+          <span
+            className={`inline-block px-2.5 py-1 rounded-lg text-[11px] font-bold ${conf.bg} ${conf.text}`}
+          >
+            {conf.label}
+          </span>
+        );
+      },
+    },
     {
       key: "actions",
       header: "Aksi",
@@ -436,15 +530,15 @@ export default function StudentsPage() {
         <div className="flex items-center justify-end gap-2">
           <button
             onClick={() => router.push(`/dashboard/admin/students/${item.id}`)}
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border bg-surface text-xs font-semibold hover:bg-muted/10 transition-all active:scale-[0.98] min-h-[44px]"
+            className="px-3 py-1.5 bg-[#F5F3EC] border border-[#E5E0D8] text-[#1A1A1A] text-xs font-semibold rounded-xl hover:bg-[#EAE6DC] transition-colors"
           >
             Detail
           </button>
           <button
             onClick={() => startEdit(item)}
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border bg-surface text-xs font-semibold hover:bg-muted/10 transition-all active:scale-[0.98] min-h-[44px]"
+            className="px-3 py-1.5 bg-[#F5F3EC] border border-[#E5E0D8] text-[#1A1A1A] text-xs font-semibold rounded-xl hover:bg-[#EAE6DC] transition-colors inline-flex items-center gap-1"
           >
-            <Pencil className="h-3.5 w-3.5" />
+            <Pencil className="h-3.5 w-3.5 text-[#0C3B2E]" />
             Edit
           </button>
         </div>
@@ -453,69 +547,108 @@ export default function StudentsPage() {
   ];
 
   return (
-    <PageContainer>
-      <div className="flex flex-col gap-6">
-        <PageHeader
-          title="Siswa"
-          description="Kelola data siswa"
-          primaryAction={
-            formState === "list"
-              ? { label: "Tambah Siswa", onClick: () => setFormState("create") }
-              : undefined
-          }
-          secondaryActions={
-            formState === "list"
-              ? [
-                  { label: "Export", onClick: handleExport, icon: <Download className="h-4 w-4" />, disabled: isExporting },
-                  { label: "Import", onClick: () => setShowImportDialog(true), icon: <Upload className="h-4 w-4" /> },
-                  {
-                    label: "Enroll Bulk",
-                    onClick: () => {
-                      if (selectedStudentIds.size === 0) {
-                        toast.addToast("error", "Pilih minimal satu siswa terlebih dahulu.");
-                        return;
-                      }
-                      setShowBulkEnrollForm(true);
-                    },
-                    icon: <CheckSquare className="h-4 w-4" />,
-                    disabled: selectedStudentIds.size === 0,
-                  },
-                  {
-                    label: "Link Guardian",
-                    onClick: () => {
-                      if (selectedStudentIds.size === 0) {
-                        toast.addToast("error", "Pilih minimal satu siswa terlebih dahulu.");
-                        return;
-                      }
-                      setShowBulkGuardianForm(true);
-                    },
-                    icon: <UserSearch className="h-4 w-4" />,
-                    disabled: selectedStudentIds.size === 0,
-                  },
-                ]
-              : []
-          }
-        />
+    <PageContainer className="bg-[#F5F3EC] min-h-screen p-3 sm:p-5 md:p-6 text-[#1A1A1A]">
+      <div className="flex flex-col gap-5 sm:gap-6 max-w-[1600px] mx-auto">
+        {/* HEADER */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-5 rounded-[20px] border border-[#E5E0D8] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-[#1A1A1A] tracking-tight">
+              Master Data Siswa
+            </h1>
+            <p className="text-xs sm:text-sm text-[#7A7A7A] mt-0.5">
+              Kelola profil, riwayat akademik, dan status pendaftaran siswa.
+            </p>
+          </div>
 
+          <div className="flex items-center gap-2 flex-wrap">
+            {formState === "list" && (
+              <>
+                <button
+                  onClick={handleExport}
+                  disabled={isExporting}
+                  className="px-3.5 py-2 bg-[#F5F3EC] border border-[#E5E0D8] text-[#1A1A1A] text-xs font-bold rounded-xl hover:bg-[#EAE6DC] transition-colors inline-flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  <Download className="h-4 w-4 text-[#0C3B2E]" />
+                  <span>Export</span>
+                </button>
+
+                <button
+                  onClick={() => setShowImportDialog(true)}
+                  className="px-3.5 py-2 bg-[#F5F3EC] border border-[#E5E0D8] text-[#1A1A1A] text-xs font-bold rounded-xl hover:bg-[#EAE6DC] transition-colors inline-flex items-center gap-1.5"
+                >
+                  <Upload className="h-4 w-4 text-[#C28E38]" />
+                  <span>Import</span>
+                </button>
+
+                {selectedStudentIds.size > 0 && (
+                  <>
+                    <button
+                      onClick={() => setShowBulkEnrollForm(true)}
+                      className="px-3.5 py-2 bg-[#0C3B2E]/10 border border-[#0C3B2E]/30 text-[#0C3B2E] text-xs font-bold rounded-xl hover:bg-[#0C3B2E] hover:text-white transition-colors inline-flex items-center gap-1.5"
+                    >
+                      <GraduationCap className="h-4 w-4" />
+                      <span>Enroll ({selectedStudentIds.size})</span>
+                    </button>
+
+                    <button
+                      onClick={() => setShowBulkGuardianForm(true)}
+                      className="px-3.5 py-2 bg-[#0C3B2E]/10 border border-[#0C3B2E]/30 text-[#0C3B2E] text-xs font-bold rounded-xl hover:bg-[#0C3B2E] hover:text-white transition-colors inline-flex items-center gap-1.5"
+                    >
+                      <Users className="h-4 w-4" />
+                      <span>Hubungkan Wali</span>
+                    </button>
+                  </>
+                )}
+
+                <button
+                  onClick={() => {
+                    resetForm();
+                    setFormState("create");
+                  }}
+                  className="px-4 py-2 bg-[#0C3B2E] text-white text-xs font-bold rounded-xl hover:bg-[#10523E] transition-all shadow-sm inline-flex items-center gap-1.5"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  <span>Tambah Siswa</span>
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* ALERTS */}
         {error && (
-          <div className="rounded-md border border-danger/20 bg-danger/10 px-4 py-3">
-            <p className="text-sm text-danger">{error}</p>
+          <div className="rounded-2xl border border-[#A83A32]/30 bg-[#A83A32]/10 p-4">
+            <p className="text-xs sm:text-sm font-semibold text-[#A83A32]">{error}</p>
           </div>
         )}
 
         {submitError && (
-          <div className="rounded-md border border-danger/20 bg-danger/10 px-4 py-3">
-            <p className="text-sm text-danger">{submitError}</p>
+          <div className="rounded-2xl border border-[#A83A32]/30 bg-[#A83A32]/10 p-4">
+            <p className="text-xs sm:text-sm font-semibold text-[#A83A32]">{submitError}</p>
           </div>
         )}
 
+        {/* DIALOG IMPORT */}
         {showImportDialog && (
-          <Card>
-            <h3 className="text-base font-semibold text-foreground mb-4">Import Siswa dari Excel</h3>
+          <div className="rounded-[20px] border border-[#E5E0D8] bg-white p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-[#EAE6DC] pb-3">
+              <h3 className="text-base font-bold text-[#1A1A1A]">Import Siswa dari Excel</h3>
+              <button
+                onClick={() => {
+                  setShowImportDialog(false);
+                  setImportFile(null);
+                  setImportResult(null);
+                }}
+                className="text-[#8A8A8A] hover:text-black"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
             <form className="space-y-4" onSubmit={handleImport}>
               <div>
-                <label htmlFor="import-file" className="block text-xs text-muted mb-1.5">
-                  File Excel
+                <label htmlFor="import-file" className="block text-xs font-bold text-[#555] mb-1.5">
+                  Pilih File Excel / CSV
                 </label>
                 <input
                   id="import-file"
@@ -526,23 +659,25 @@ export default function StudentsPage() {
                     setImportFile(file);
                     setImportResult(null);
                   }}
-                  className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  className="w-full p-2.5 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
                   disabled={isImporting}
                 />
-                <p className="text-xs text-muted mt-1">Mendukung format sederhana maupun Dapodik. Untuk format Dapodik, data orang tua akan otomatis dihubungkan.</p>
-                <div className="inline-flex items-center gap-3 mt-2">
+                <p className="text-[11px] text-[#8A8A8A] mt-1.5">
+                  Mendukung format sederhana maupun Dapodik. Untuk format Dapodik, data orang tua akan otomatis terhubung.
+                </p>
+                <div className="flex items-center gap-3 mt-2 text-xs">
                   <a
                     href="/templates/students-template.xlsx"
                     download
-                    className="inline-flex items-center gap-2 text-xs text-primary hover:underline"
+                    className="text-[#0C3B2E] font-bold hover:underline"
                   >
                     Download Template Sederhana
                   </a>
-                  <span className="text-xs text-muted">|</span>
+                  <span className="text-[#CCC]">|</span>
                   <a
                     href="/templates/template_database_dapodik.xlsx"
                     download
-                    className="inline-flex items-center gap-2 text-xs text-primary hover:underline"
+                    className="text-[#0C3B2E] font-bold hover:underline"
                   >
                     Download Template Dapodik
                   </a>
@@ -550,38 +685,41 @@ export default function StudentsPage() {
               </div>
 
               <div>
-                <label htmlFor="import-academic-year" className="block text-xs text-muted mb-1.5">
-                  Tahun Ajaran <span className="text-muted">(Untuk enrollment & kelas dari format Dapodik)</span>
+                <label htmlFor="import-academic-year" className="block text-xs font-bold text-[#555] mb-1.5">
+                  Tahun Ajaran Target
                 </label>
                 <select
                   id="import-academic-year"
                   value={importAcademicYearId}
                   onChange={(e) => setImportAcademicYearId(e.target.value)}
-                  className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  className="w-full px-3.5 py-2.5 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
                   disabled={isImporting}
                 >
                   <option value="">Pilih Tahun Ajaran</option>
                   {academicYears.map((year) => (
-                    <option key={year.id} value={year.id}>{year.name}</option>
+                    <option key={year.id} value={year.id}>
+                      {year.name}
+                    </option>
                   ))}
                 </select>
-                <p className="text-xs text-muted mt-1">Wajib diisi jika menggunakan format Dapodik agar kelas dan enrollment otomatis dibuat.</p>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 pt-2">
                 <button
                   type="submit"
                   disabled={isImporting || !importFile}
-                  className="h-10 px-4 rounded-md bg-primary text-white text-sm font-semibold hover:bg-primary-dark active:scale-[0.98] transition-all focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 inline-flex items-center gap-2 min-h-[44px]"
+                  className="px-4 py-2 bg-[#0C3B2E] text-white text-xs font-bold rounded-xl hover:bg-[#10523E] disabled:opacity-50 inline-flex items-center gap-2"
                 >
-                  {isImporting && <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />}
-                  {isImporting ? "Mengimport..." : "Import"}
+                  {isImporting && (
+                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  )}
+                  {isImporting ? "Mengimport..." : "Mulai Import"}
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setShowImportDialog(false); setImportFile(null); setImportResult(null); setImportAcademicYearId(""); }}
+                  onClick={() => setShowImportDialog(false)}
                   disabled={isImporting}
-                  className="h-10 px-4 rounded-md border border-border bg-surface text-sm font-semibold hover:bg-muted/10 transition-colors min-h-[44px]"
+                  className="px-4 py-2 bg-[#F5F3EC] border border-[#E5E0D8] text-xs font-bold text-[#1A1A1A] rounded-xl"
                 >
                   Batal
                 </button>
@@ -589,126 +727,98 @@ export default function StudentsPage() {
             </form>
 
             {importResult && (
-              <div className="mt-4 space-y-2">
-                <p className="text-xs text-muted">
-                  Berhasil: {importResult.successCount} (Baru: {importResult.insertedCount}, Update: {importResult.updatedCount}) | Gagal: {importResult.errorCount}
+              <div className="mt-4 p-3 bg-[#F5F3EC] rounded-xl border border-[#E5E0D8] space-y-2">
+                <p className="text-xs font-bold text-[#1A1A1A]">
+                  Hasil Import: {importResult.successCount} Berhasil (Baru: {importResult.insertedCount}, Update: {importResult.updatedCount}) | Gagal: {importResult.errorCount}
                 </p>
-                {importResult.results.filter((result) => result.status === "error" || result.status === "updated").length > 0 && (
-                  <div className="max-h-48 overflow-y-auto rounded-md border border-border bg-background">
-                    <table className="min-w-full text-xs">
-                      <thead>
-                        <tr className="border-b border-border">
-                          <th className="px-3 py-2 text-left font-medium text-muted">Row</th>
-                          <th className="px-3 py-2 text-left font-medium text-muted">NIS</th>
-                          <th className="px-3 py-2 text-left font-medium text-muted">Nama</th>
-                          <th className="px-3 py-2 text-left font-medium text-muted">Status</th>
-                          <th className="px-3 py-2 text-left font-medium text-muted">Pesan</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {importResult.results
-                          .filter((result) => result.status === "error" || result.status === "updated")
-                          .map((result, index) => (
-                            <tr key={index} className="border-b border-border last:border-b-0">
-                              <td className="px-3 py-2 text-foreground">{result.row || "-"}</td>
-                              <td className="px-3 py-2 text-foreground">{result.nis}</td>
-                              <td className="px-3 py-2 text-foreground">{result.full_name}</td>
-                              <td className="px-3 py-2">
-                                {result.status === "updated" ? (
-                                  <span className="text-yellow-700">Update</span>
-                                ) : (
-                                  <span className="text-danger">{result.status}</span>
-                                )}
-                              </td>
-                              <td className="px-3 py-2 text-muted">{result.message}</td>
-                            </tr>
-                          ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
               </div>
             )}
-          </Card>
+          </div>
         )}
 
+        {/* BULK ENROLL FORM */}
         {showBulkEnrollForm && (
-          <Card>
-            <h3 className="text-base font-semibold text-foreground mb-4">Enroll Bulk Siswa</h3>
-            <p className="text-xs text-muted mb-4">
-              {selectedStudentIds.size} siswa dipilih. Pilih tahun ajaran, dan opsional kelas untuk mendaftarkan siswa tersebut.
-            </p>
+          <div className="rounded-[20px] border border-[#E5E0D8] bg-white p-5 shadow-sm space-y-4">
+            <h3 className="text-base font-bold text-[#1A1A1A]">
+              Enroll Bulk Siswa ({selectedStudentIds.size} Siswa Terpilih)
+            </h3>
             <form className="space-y-4" onSubmit={handleBulkEnroll}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="bulk-academic-year" className="block text-xs text-muted mb-1.5">
+                  <label htmlFor="bulk-academic-year" className="block text-xs font-bold text-[#555] mb-1.5">
                     Tahun Ajaran
                   </label>
                   <select
                     id="bulk-academic-year"
                     value={bulkEnrollAcademicYearId}
                     onChange={(e) => setBulkEnrollAcademicYearId(e.target.value)}
-                    className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-full px-3.5 py-2.5 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
                     required
                     disabled={isBulkEnrolling}
                   >
                     <option value="">Pilih Tahun Ajaran</option>
                     {academicYears.map((year) => (
-                      <option key={year.id} value={year.id}>{year.name}</option>
+                      <option key={year.id} value={year.id}>
+                        {year.name}
+                      </option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label htmlFor="bulk-class" className="block text-xs text-muted mb-1.5">
-                    Kelas <span className="text-muted">(Opsional)</span>
+                  <label htmlFor="bulk-class" className="block text-xs font-bold text-[#555] mb-1.5">
+                    Kelas (Opsional)
                   </label>
                   <select
                     id="bulk-class"
                     value={bulkEnrollClassId}
                     onChange={(e) => setBulkEnrollClassId(e.target.value)}
-                    className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-full px-3.5 py-2.5 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
                     disabled={isBulkEnrolling}
                   >
                     <option value="">Tanpa Kelas</option>
                     {classes.map((cls) => (
-                      <option key={cls.id} value={cls.id}>{cls.name}</option>
+                      <option key={cls.id} value={cls.id}>
+                        {cls.name}
+                      </option>
                     ))}
                   </select>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 pt-2">
                 <button
                   type="submit"
-                  disabled={isBulkEnrolling || selectedStudentIds.size === 0}
-                  className="h-10 px-4 rounded-md bg-primary text-white text-sm font-semibold hover:bg-primary-dark active:scale-[0.98] transition-all focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 inline-flex items-center gap-2 min-h-[44px]"
+                  disabled={isBulkEnrolling}
+                  className="px-4 py-2 bg-[#0C3B2E] text-white text-xs font-bold rounded-xl hover:bg-[#10523E] disabled:opacity-50 inline-flex items-center gap-2"
                 >
-                  {isBulkEnrolling && <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />}
-                  {isBulkEnrolling ? "Mendaftarkan..." : `Daftarkan ${selectedStudentIds.size} Siswa`}
+                  {isBulkEnrolling && (
+                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  )}
+                  {isBulkEnrolling ? "Mendaftarkan..." : "Daftarkan Siswa"}
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setShowBulkEnrollForm(false); setSelectedStudentIds(new Set()); }}
+                  onClick={() => setShowBulkEnrollForm(false)}
                   disabled={isBulkEnrolling}
-                  className="h-10 px-4 rounded-md border border-border bg-surface text-sm font-semibold hover:bg-muted/10 transition-colors min-h-[44px]"
+                  className="px-4 py-2 bg-[#F5F3EC] border border-[#E5E0D8] text-xs font-bold text-[#1A1A1A] rounded-xl"
                 >
                   Batal
                 </button>
               </div>
             </form>
-          </Card>
+          </div>
         )}
 
+        {/* BULK GUARDIAN FORM */}
         {showBulkGuardianForm && (
-          <Card>
-            <h3 className="text-base font-semibold text-foreground mb-4">Hubungkan Wali ke Siswa</h3>
-            <p className="text-xs text-muted mb-4">
-              {selectedStudentIds.size} siswa dipilih. Cari dan pilih wali yang akan dihubungkan ke siswa tersebut.
-            </p>
+          <div className="rounded-[20px] border border-[#E5E0D8] bg-white p-5 shadow-sm space-y-4">
+            <h3 className="text-base font-bold text-[#1A1A1A]">
+              Hubungkan Wali ke {selectedStudentIds.size} Siswa Terpilih
+            </h3>
             <form className="space-y-4" onSubmit={handleBulkLinkGuardian}>
               <div>
-                <label htmlFor="guardian-search" className="block text-xs text-muted mb-1.5">
+                <label htmlFor="guardian-search" className="block text-xs font-bold text-[#555] mb-1.5">
                   Cari Wali (Nama, Email, No HP)
                 </label>
                 <input
@@ -717,64 +827,73 @@ export default function StudentsPage() {
                   value={guardianSearchQuery}
                   onChange={(e) => handleGuardianSearch(e.target.value)}
                   placeholder="Ketik untuk mencari wali..."
-                  className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  className="w-full px-3.5 py-2.5 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
                   disabled={isLinkingGuardian}
                 />
                 {guardianSearchResults.length > 0 && (
-                  <div className="mt-2 max-h-48 overflow-y-auto rounded-md border border-border bg-background">
+                  <div className="mt-2 max-h-48 overflow-y-auto rounded-xl border border-[#E5E0D8] bg-[#FDFCF9]">
                     {guardianSearchResults.map((guardian) => (
                       <button
                         key={guardian.guardian_profile_id}
                         type="button"
                         onClick={() => {
                           setSelectedGuardianProfileId(guardian.guardian_profile_id);
-                          setGuardianSearchQuery(`${guardian.full_name} (${guardian.email})`);
+                          setGuardianSearchQuery(
+                            `${guardian.full_name} (${guardian.email})`
+                          );
                           setGuardianSearchResults([]);
                         }}
-                        className={`w-full text-left px-3 py-2 hover:bg-muted/10 transition-colors border-b border-border last:border-b-0 ${selectedGuardianProfileId === guardian.guardian_profile_id ? "bg-primary/10" : ""}`}
+                        className={`w-full text-left px-3 py-2 hover:bg-[#F5F3EC] transition-colors border-b border-[#E5E0D8] last:border-b-0 ${
+                          selectedGuardianProfileId === guardian.guardian_profile_id
+                            ? "bg-[#0C3B2E]/10 font-bold text-[#0C3B2E]"
+                            : ""
+                        }`}
                       >
-                        <p className="text-sm font-medium text-foreground">{guardian.full_name}</p>
-                        <p className="text-xs text-muted">{guardian.email} {guardian.phone ? `• ${guardian.phone}` : ""}</p>
+                        <p className="text-xs">{guardian.full_name}</p>
+                        <p className="text-[10px] text-[#7A7A7A]">{guardian.email}</p>
                       </button>
                     ))}
                   </div>
                 )}
-                {selectedGuardianProfileId && (
-                  <p className="text-xs text-green-600 mt-1">Wali dipilih. Klik submit untuk menghubungkan.</p>
-                )}
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 pt-2">
                 <button
                   type="submit"
-                  disabled={isLinkingGuardian || !selectedGuardianProfileId || selectedStudentIds.size === 0}
-                  className="h-10 px-4 rounded-md bg-primary text-white text-sm font-semibold hover:bg-primary-dark active:scale-[0.98] transition-all focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 inline-flex items-center gap-2 min-h-[44px]"
+                  disabled={isLinkingGuardian || !selectedGuardianProfileId}
+                  className="px-4 py-2 bg-[#0C3B2E] text-white text-xs font-bold rounded-xl hover:bg-[#10523E] disabled:opacity-50 inline-flex items-center gap-2"
                 >
-                  {isLinkingGuardian && <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />}
-                  {isLinkingGuardian ? "Menghubungkan..." : `Hubungkan ${selectedStudentIds.size} Siswa ke Wali`}
+                  {isLinkingGuardian && (
+                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  )}
+                  {isLinkingGuardian ? "Hubungkan..." : "Simpan Relasi Wali"}
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setShowBulkGuardianForm(false); setSelectedStudentIds(new Set()); setSelectedGuardianProfileId(""); setGuardianSearchResults([]); setGuardianSearchQuery(""); }}
+                  onClick={() => setShowBulkGuardianForm(false)}
                   disabled={isLinkingGuardian}
-                  className="h-10 px-4 rounded-md border border-border bg-surface text-sm font-semibold hover:bg-muted/10 transition-colors min-h-[44px]"
+                  className="px-4 py-2 bg-[#F5F3EC] border border-[#E5E0D8] text-xs font-bold text-[#1A1A1A] rounded-xl"
                 >
                   Batal
                 </button>
               </div>
             </form>
-          </Card>
+          </div>
         )}
 
+        {/* FORM CREATE / EDIT */}
         {(formState === "create" || formState === "edit") && (
-          <Card>
-            <h3 className="text-base font-semibold text-foreground mb-4">
-              {formState === "create" ? "Tambah Siswa" : "Edit Siswa"}
+          <div className="rounded-[20px] border border-[#E5E0D8] bg-white p-5 shadow-sm space-y-4">
+            <h3 className="text-base font-bold text-[#1A1A1A]">
+              {formState === "create" ? "Tambah Siswa Baru" : "Edit Data Siswa"}
             </h3>
-            <form className="space-y-4" onSubmit={formState === "create" ? handleCreate : handleUpdate}>
+            <form
+              className="space-y-4"
+              onSubmit={formState === "create" ? handleCreate : handleUpdate}
+            >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                   <label htmlFor="nis" className="block text-xs text-muted mb-1.5">
+                  <label htmlFor="nis" className="block text-xs font-bold text-[#555] mb-1.5">
                     NIS
                   </label>
                   <input
@@ -782,14 +901,14 @@ export default function StudentsPage() {
                     type="text"
                     value={formData.nis}
                     onChange={(e) => setFormData({ ...formData, nis: e.target.value })}
-                     className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-full px-3.5 py-2.5 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
                     required
                     disabled={isSubmitting}
                   />
                 </div>
 
                 <div>
-                   <label htmlFor="full_name" className="block text-xs text-muted mb-1.5">
+                  <label htmlFor="full_name" className="block text-xs font-bold text-[#555] mb-1.5">
                     Nama Lengkap
                   </label>
                   <input
@@ -797,7 +916,7 @@ export default function StudentsPage() {
                     type="text"
                     value={formData.full_name}
                     onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                     className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-full px-3.5 py-2.5 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
                     required
                     disabled={isSubmitting}
                   />
@@ -806,7 +925,7 @@ export default function StudentsPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                   <label htmlFor="birth_date" className="block text-xs text-muted mb-1.5">
+                  <label htmlFor="birth_date" className="block text-xs font-bold text-[#555] mb-1.5">
                     Tanggal Lahir
                   </label>
                   <input
@@ -814,122 +933,167 @@ export default function StudentsPage() {
                     type="date"
                     value={formData.birth_date}
                     onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
-                    className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-full px-3.5 py-2.5 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
                     disabled={isSubmitting}
                   />
                 </div>
 
                 <div>
-                   <label htmlFor="status" className="block text-xs text-muted mb-1.5">
+                  <label htmlFor="status" className="block text-xs font-bold text-[#555] mb-1.5">
                     Status
                   </label>
                   <select
                     id="status"
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-full px-3.5 py-2.5 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
                     disabled={isSubmitting}
                   >
                     {STATUS_OPTIONS.map((s) => (
-                      <option key={s.value} value={s.value}>{s.label}</option>
+                      <option key={s.value} value={s.value}>
+                        {s.label}
+                      </option>
                     ))}
                   </select>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div>
+                <label htmlFor="address" className="block text-xs font-bold text-[#555] mb-1.5">
+                  Alamat
+                </label>
+                <textarea
+                  id="address"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  rows={3}
+                  className="w-full px-3.5 py-2.5 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
+                  disabled={isSubmitting}
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                    className="h-10 px-4 rounded-md bg-primary text-white text-sm font-semibold hover:bg-primary-dark active:scale-[0.98] transition-all focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 inline-flex items-center gap-2 min-h-[44px]"
+                  className="px-4 py-2 bg-[#0C3B2E] text-white text-xs font-bold rounded-xl hover:bg-[#10523E] disabled:opacity-50 inline-flex items-center gap-2"
                 >
-                  {isSubmitting && <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />}
-                  {isSubmitting ? "Menyimpan..." : "Simpan"}
+                  {isSubmitting && (
+                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  )}
+                  {isSubmitting ? "Menyimpan..." : "Simpan Data"}
                 </button>
                 <button
                   type="button"
-                  onClick={() => { resetForm(); setFormState("list"); setEditingId(null); }}
+                  onClick={() => {
+                    resetForm();
+                    setFormState("list");
+                    setEditingId(null);
+                  }}
                   disabled={isSubmitting}
-                   className="h-10 px-4 rounded-md border border-border bg-surface text-sm font-semibold hover:bg-muted/10 transition-colors min-h-[44px]"
+                  className="px-4 py-2 bg-[#F5F3EC] border border-[#E5E0D8] text-xs font-bold text-[#1A1A1A] rounded-xl"
                 >
                   Batal
                 </button>
               </div>
             </form>
-          </Card>
+          </div>
         )}
 
+        {/* LIST TABLE */}
         {formState === "list" && (
           <>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex flex-1 items-center gap-3 flex-wrap">
-                <SearchInput
+            <div className="rounded-[20px] border border-[#E5E0D8] bg-white p-4 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#8A8A8A]" />
+                <input
+                  type="text"
                   value={searchQuery}
-                  onChange={(value) => { setSearchQuery(value); setPage(1); }}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setPage(1);
+                  }}
                   placeholder="Cari NIS atau nama siswa..."
+                  className="w-full pl-10 pr-4 py-2 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs font-medium text-[#1A1A1A] focus:outline-none focus:border-[#0C3B2E]"
                 />
+              </div>
+
+              <div className="flex items-center gap-2">
                 <select
                   value={statusFilter}
-                  onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-                   className="sm:h-10 h-11 w-40 rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setPage(1);
+                  }}
+                  className="px-3 py-2 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs font-medium text-[#1A1A1A]"
                 >
                   <option value="all">Semua Status</option>
                   {STATUS_OPTIONS.map((s) => (
-                    <option key={s.value} value={s.value}>{s.label}</option>
+                    <option key={s.value} value={s.value}>
+                      {s.label}
+                    </option>
                   ))}
                 </select>
+
                 {(searchQuery || statusFilter !== "all") && (
                   <button
                     type="button"
-                    onClick={() => { setSearchQuery(""); setStatusFilter("all"); setPage(1); }}
-                    className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-border bg-surface text-xs font-medium text-muted hover:text-foreground hover:bg-muted/10 transition-colors min-h-[44px]"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setStatusFilter("all");
+                      setPage(1);
+                    }}
+                    className="px-3 py-2 bg-[#F5F3EC] border border-[#E5E0D8] text-xs font-bold text-[#1A1A1A] rounded-xl hover:bg-[#EAE6DC]"
                   >
-                    <X className="h-3.5 w-3.5" />
                     Reset
                   </button>
                 )}
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setPage(Math.max(1, page - 1))}
-                  disabled={page <= 1}
-                  className="h-9 px-3 rounded-md border border-border bg-surface text-xs font-semibold hover:bg-muted/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px]"
-                >
-                  Sebelumnya
-                </button>
-                <span className="text-xs text-muted">
-                  Halaman {page} dari {totalPages}
-                </span>
-                <button
-                  onClick={() => setPage(Math.min(totalPages, page + 1))}
-                  disabled={page >= totalPages}
-                  className="h-9 px-3 rounded-md border border-border bg-surface text-xs font-semibold hover:bg-muted/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px]"
-                >
-                  Selanjutnya
-                </button>
-              </div>
             </div>
 
-            <p className="text-xs text-muted">
-              Menampilkan {students.length} dari {totalRows} data
-            </p>
+            <div className="rounded-[20px] border border-[#E5E0D8] bg-white p-4 sm:p-5 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+              {isLoading ? (
+                <TableSkeleton rows={5} columns={5} />
+              ) : (
+                <DataTable
+                  columns={columns}
+                  data={students}
+                  keyExtractor={(item) => item.id}
+                  emptyTitle="Belum ada data siswa"
+                  emptyDescription="Mulai dengan menambahkan siswa pertama atau impor dari file Excel."
+                />
+              )}
 
-            {isLoading ? (
-              <TableSkeleton rows={5} columns={5} />
-            ) : (
-              <DataTable
-                columns={columns}
-                data={students}
-                keyExtractor={(item) => item.id}
-                emptyTitle="Belum ada siswa"
-                emptyDescription="Mulai dengan menambahkan siswa pertama ke sistem."
-                emptyIcon={
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.5 4.5 0 00-7.536-7.536 9.337 9.337 0 00-.952 4.121A9.37 9.37 0 0112 3.75a9.37 9.37 0 01.75 3.128m-6.75 5.128a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zm13.5 0a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
-                  </svg>
-                }
-              />
-            )}
+              {totalRows > pageSize && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 mt-2 border-t border-[#EAE6DC] text-xs text-[#7A7A7A]">
+                  <span>
+                    Menampilkan {(page - 1) * pageSize + 1} -{" "}
+                    {Math.min(page * pageSize, totalRows)} dari {totalRows} data
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      className="px-3 py-1.5 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs font-bold text-[#1A1A1A] disabled:opacity-50"
+                    >
+                      Sebelumnya
+                    </button>
+                    <span className="font-bold text-[#1A1A1A]">
+                      {page} / {totalPages}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={page >= totalPages}
+                      className="px-3 py-1.5 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs font-bold text-[#1A1A1A] disabled:opacity-50"
+                    >
+                      Selanjutnya
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>

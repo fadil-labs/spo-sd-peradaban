@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Card } from "@/components/ui/card";
 import { getFinancialAuditLogsAction, type FinancialAuditFilters, type FinancialAuditLogEntry } from "@/lib/financial-audit/actions";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { DataTable } from "@/components/operational/data-table";
-import { X } from "lucide-react";
+import { Filter, RotateCcw, ScrollText } from "lucide-react";
+
 type FinancialAuditLogsClientProps = {
   initialLogs: FinancialAuditLogEntry[];
   initialPage: number;
@@ -124,34 +124,49 @@ export default function FinancialAuditLogsClient({ initialLogs, initialPage, ini
       header: "Waktu",
       sortable: true,
       render: (item: FinancialAuditLogEntry) => (
-        <span className="text-muted whitespace-nowrap">{formatDate(item.created_at)}</span>
+        <span className="text-xs text-[#7A7A7A] whitespace-nowrap">{formatDate(item.created_at)}</span>
       ),
     },
     {
       key: "action",
       header: "Aksi",
-      render: (item: FinancialAuditLogEntry) => getActionLabel(item.action_type),
+      render: (item: FinancialAuditLogEntry) => (
+        <span className="font-bold text-xs text-[#1A1A1A]">{getActionLabel(item.action_type)}</span>
+      ),
     },
     {
       key: "entity",
       header: "Entitas",
-      render: (item: FinancialAuditLogEntry) => getEntityLabel(item.entity_type),
+      render: (item: FinancialAuditLogEntry) => (
+        <span className="inline-block px-2.5 py-0.5 rounded-lg text-[11px] font-semibold bg-[#F5F3EC] border border-[#E5E0D8] text-[#4A4A4A]">
+          {getEntityLabel(item.entity_type)}
+        </span>
+      ),
     },
-    { key: "actor", header: "Aktor", render: (item: FinancialAuditLogEntry) => item.actor_role || "-", mobileHide: true },
+    {
+      key: "actor",
+      header: "Aktor",
+      render: (item: FinancialAuditLogEntry) => (
+        <span className="text-xs font-semibold text-[#7A7A7A] uppercase">{item.actor_role || "-"}</span>
+      ),
+      mobileHide: true,
+    },
     {
       key: "amount",
       header: "Jumlah",
       className: "text-right",
-      render: (item: FinancialAuditLogEntry) => formatCurrency(item.amount),
+      render: (item: FinancialAuditLogEntry) => (
+        <span className="font-bold text-xs text-[#0C3B2E]">{formatCurrency(item.amount)}</span>
+      ),
     },
     {
       key: "status",
-      header: "Status",
+      header: "Status Perubahan",
       render: (item: FinancialAuditLogEntry) => (
-        <span className="text-muted">
-          {item.old_status && <span>{item.old_status}</span>}
-          {item.old_status && item.new_status && <span className="mx-1">→</span>}
-          {item.new_status && <span>{item.new_status}</span>}
+        <span className="text-xs text-[#555] font-medium">
+          {item.old_status && <span className="px-1.5 py-0.5 bg-gray-100 rounded text-gray-600">{item.old_status}</span>}
+          {item.old_status && item.new_status && <span className="mx-1 text-[#0C3B2E] font-bold">→</span>}
+          {item.new_status && <span className="px-1.5 py-0.5 bg-[#0C3B2E]/10 text-[#0C3B2E] rounded font-bold">{item.new_status}</span>}
           {!item.old_status && !item.new_status && "-"}
         </span>
       ),
@@ -159,110 +174,124 @@ export default function FinancialAuditLogsClient({ initialLogs, initialPage, ini
   ];
 
   return (
-    <div className="w-full max-w-7xl space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold text-foreground">Log Keuangan</h2>
-        <p className="text-sm text-muted">Audit trail transaksi keuangan</p>
+    <div className="w-full space-y-6">
+      {/* HEADER */}
+      <div className="bg-white p-5 rounded-[20px] border border-[#E5E0D8] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+        <h1 className="text-xl sm:text-2xl font-extrabold text-[#1A1A1A] tracking-tight">
+          Log Keuangan & Audit
+        </h1>
+        <p className="text-xs sm:text-sm text-[#7A7A7A] mt-0.5">
+          Audit trail riwayat aktivitas transaksi keuangan dan perubahan konfigurasi sistem.
+        </p>
       </div>
 
       {error && (
-        <div className="rounded-md border border-danger/20 bg-danger/10 px-4 py-3">
-          <p className="text-sm text-danger">{error}</p>
+        <div className="rounded-2xl border border-[#A83A32]/30 bg-[#A83A32]/10 p-4">
+          <p className="text-xs sm:text-sm font-semibold text-[#A83A32]">{error}</p>
         </div>
       )}
 
-      <Card>
-        <h3 className="text-base font-semibold text-foreground mb-4">Filter</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* FILTER BAR */}
+      <div className="bg-white p-5 rounded-[20px] border border-[#E5E0D8] shadow-[0_2px_10px_rgba(0,0,0,0.02)] space-y-4">
+        <div className="flex items-center justify-between border-b border-[#EAE6DC] pb-3">
+          <h3 className="text-xs font-bold text-[#555] uppercase tracking-wider flex items-center gap-1.5">
+            <Filter className="h-3.5 w-3.5 text-[#0C3B2E]" />
+            Filter Audit Log
+          </h3>
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="text-xs font-bold text-[#A83A32] hover:underline flex items-center gap-1"
+            >
+              <RotateCcw className="h-3 w-3" />
+              Reset Filter
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <div>
-            <label htmlFor="actionType" className="block text-xs text-muted mb-1">Jenis Aksi</label>
+            <label htmlFor="actionType" className="block text-[11px] font-bold text-[#7A7A7A] mb-1">
+              Jenis Aksi
+            </label>
             <select
               id="actionType"
               value={filters.actionType}
               onChange={(e) => handleFilterChange("actionType", e.target.value)}
-              className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-3 py-2 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
             >
               {ACTION_TYPE_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
           </div>
+
           <div>
-            <label htmlFor="entityType" className="block text-xs text-muted mb-1">Jenis Entitas</label>
+            <label htmlFor="entityType" className="block text-[11px] font-bold text-[#7A7A7A] mb-1">
+              Jenis Entitas
+            </label>
             <select
               id="entityType"
               value={filters.entityType}
               onChange={(e) => handleFilterChange("entityType", e.target.value)}
-              className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-3 py-2 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
             >
               {ENTITY_TYPE_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
           </div>
+
           <div>
-            <label htmlFor="startDate" className="block text-xs text-muted mb-1">Tanggal Mulai</label>
+            <label htmlFor="startDate" className="block text-[11px] font-bold text-[#7A7A7A] mb-1">
+              Tanggal Mulai
+            </label>
             <input
               id="startDate"
               type="date"
               value={filters.startDate}
               onChange={(e) => handleFilterChange("startDate", e.target.value)}
-              className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-3 py-2 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
             />
           </div>
+
           <div>
-            <label htmlFor="endDate" className="block text-xs text-muted mb-1">Tanggal Akhir</label>
+            <label htmlFor="endDate" className="block text-[11px] font-bold text-[#7A7A7A] mb-1">
+              Tanggal Akhir
+            </label>
             <input
               id="endDate"
               type="date"
               value={filters.endDate}
               onChange={(e) => handleFilterChange("endDate", e.target.value)}
-              className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-3 py-2 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
             />
           </div>
         </div>
-      </Card>
+      </div>
 
-      {isLoading ? (
-        <TableSkeleton rows={5} columns={6} />
-      ) : (
-        <>
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <p className="text-xs text-muted">
-              Menampilkan {logs.length} dari {logs.length} data
-            </p>
-            <div className="flex items-center gap-2">
-              {hasActiveFilters && (
-                <>
-                  <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                    Filter aktif
-                  </span>
-                  <button
-                    type="button"
-                    onClick={resetFilters}
-                    className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border bg-surface text-xs font-semibold text-muted hover:text-foreground hover:bg-muted/10 transition-colors min-h-[44px]"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                    Reset
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
+      {/* DATA TABLE CONTAINER */}
+      <div className="bg-white p-4 sm:p-5 rounded-[20px] border border-[#E5E0D8] shadow-[0_2px_10px_rgba(0,0,0,0.02)] space-y-4">
+        {isLoading ? (
+          <TableSkeleton rows={5} columns={6} />
+        ) : (
           <DataTable
             columns={columns}
             data={logs}
             keyExtractor={(item) => item.id}
-            emptyTitle="Tidak ada log keuangan"
+            emptyTitle="Tidak Ada Log Keuangan"
             emptyDescription="Log keuangan akan muncul ketika ada transaksi atau perubahan konfigurasi."
-            emptyIcon={
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-              </svg>
-            }
+            emptyIcon={<ScrollText className="h-6 w-6 text-[#7A7A7A]" />}
           />
-        </>
-      )}
+        )}
+
+        {!isLoading && logs.length > 0 && (
+          <div className="flex items-center justify-between pt-4 border-t border-[#EAE6DC] text-xs text-[#7A7A7A]">
+            <span>Menampilkan {logs.length} data audit log</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

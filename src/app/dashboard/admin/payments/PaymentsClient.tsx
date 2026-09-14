@@ -1,11 +1,20 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Card } from "@/components/ui/card";
-import { CreditCard, Search, QrCode } from "lucide-react";
+import { PageContainer } from "@/components/layout/PageContainer";
 import { DataTable } from "@/components/operational/data-table";
-import { PaymentRow, PaymentMonitorFilters, getAdminPaymentsAction } from "./actions";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { useToast } from "@/components/ui/toast";
+import { PaymentRow, PaymentMonitorFilters, getAdminPaymentsAction } from "./actions";
+import {
+  CreditCard,
+  Search,
+  QrCode,
+  Receipt,
+  RotateCcw,
+  Calendar,
+  Filter,
+} from "lucide-react";
 
 type PaymentsClientProps = {
   payments: PaymentRow[];
@@ -15,7 +24,13 @@ type PaymentsClientProps = {
   initialFilters: PaymentMonitorFilters;
 };
 
-export default function PaymentsClient({ payments: initialPayments, page: initialPage, pageSize: initialPageSize, totalRows: initialTotalRows, initialFilters }: PaymentsClientProps) {
+export default function PaymentsClient({
+  payments: initialPayments,
+  page: initialPage,
+  pageSize: initialPageSize,
+  totalRows: initialTotalRows,
+  initialFilters,
+}: PaymentsClientProps) {
   const [payments, setPayments] = useState<PaymentRow[]>(initialPayments);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,34 +72,47 @@ export default function PaymentsClient({ payments: initialPayments, page: initia
     setPage(1);
   };
 
-  const handlePageChange = (newPage: number) => {
-    setPage(newPage);
+  const resetFilters = () => {
+    setFilters({
+      status: "all",
+      paymentMethodId: "all",
+      startDate: "",
+      endDate: "",
+      searchQuery: "",
+    });
+    setPage(1);
   };
 
   const formatCurrency = (value: number) =>
-    new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(value);
+    new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(value);
 
-  const formatDate = (date: string) => new Date(date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+  const formatDate = (date: string) =>
+    new Date(date).toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
-  const getStatusLabel = (status: string) => {
+  const getStatusConf = (status: string) => {
     switch (status) {
-      case "completed": return "Berhasil";
-      case "pending": return "Menunggu";
-      case "failed": return "Gagal";
-      case "cancelled": return "Dibatalkan";
-      case "refunded": return "Dikembalikan";
-      default: return status;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "completed": return "bg-success/10 text-success";
-      case "pending": return "bg-primary/10 text-primary";
-      case "failed": return "bg-danger/10 text-danger";
-      case "cancelled": return "bg-muted/20 text-muted";
-      case "refunded": return "bg-warning/10 text-warning";
-      default: return "bg-muted/20 text-muted";
+      case "completed":
+        return { label: "Berhasil", bg: "bg-[#0C3B2E]/10", text: "text-[#0C3B2E]" };
+      case "pending":
+        return { label: "Menunggu", bg: "bg-[#C28E38]/10", text: "text-[#C28E38]" };
+      case "failed":
+        return { label: "Gagal", bg: "bg-[#A83A32]/10", text: "text-[#A83A32]" };
+      case "cancelled":
+        return { label: "Dibatalkan", bg: "bg-[#7A7A7A]/10", text: "text-[#7A7A7A]" };
+      case "refunded":
+        return { label: "Dikembalikan", bg: "bg-[#2563EB]/10", text: "text-[#2563EB]" };
+      default:
+        return { label: status, bg: "bg-gray-100", text: "text-gray-700" };
     }
   };
 
@@ -93,40 +121,37 @@ export default function PaymentsClient({ payments: initialPayments, page: initia
       key: "siswa",
       header: "Siswa",
       render: (payment: PaymentRow) => (
-        <>
-          <p className="text-foreground">{payment.students?.full_name || "-"}</p>
-          <p className="text-xs text-muted">{payment.students?.nis || "-"}</p>
-        </>
-      ),
-    },
-    {
-      key: "tagihan",
-      header: "Tagihan",
-      render: (payment: PaymentRow) => (
-        <>
-          {payment.student_bills ? formatCurrency(payment.student_bills.amount) : "-"}
-          <span className={`ml-2 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${payment.student_bills?.status === "paid" ? "bg-success/10 text-success" : "bg-muted/20 text-muted"}`}>
-            {payment.student_bills?.status || "-"}
-          </span>
-        </>
+        <div>
+          <p className="font-bold text-[#1A1A1A] text-xs sm:text-sm">
+            {payment.students?.full_name || "-"}
+          </p>
+          <p className="text-[11px] font-semibold text-[#7A7A7A]">
+            NIS: {payment.students?.nis || "-"}
+          </p>
+        </div>
       ),
     },
     {
       key: "amount",
-      header: "Jumlah",
-      className: "text-right",
-      render: (payment: PaymentRow) => <span className="text-foreground">{formatCurrency(payment.amount)}</span>,
+      header: "Nominal Bayar",
+      render: (payment: PaymentRow) => (
+        <span className="font-extrabold text-xs sm:text-sm text-[#0C3B2E]">
+          {formatCurrency(payment.amount)}
+        </span>
+      ),
     },
     {
       key: "payment_methods.name",
       header: "Metode",
       render: (payment: PaymentRow) => {
-        const isQRIS = payment.payment_methods?.name === "QRIS";
+        const isQRIS = payment.payment_methods?.name?.toUpperCase() === "QRIS";
         return (
           <div className="flex flex-col gap-1">
-            <span className="text-foreground">{payment.payment_methods?.name || "-"}</span>
+            <span className="font-bold text-xs text-[#1A1A1A]">
+              {payment.payment_methods?.name || "-"}
+            </span>
             {isQRIS && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary w-fit">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#C28E38]/10 text-[#C28E38] w-fit">
                 <QrCode className="h-3 w-3" />
                 QRIS
               </span>
@@ -134,142 +159,206 @@ export default function PaymentsClient({ payments: initialPayments, page: initia
           </div>
         );
       },
+      mobileHide: true,
     },
     {
       key: "status",
       header: "Status",
-      render: (payment: PaymentRow) => (
-        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${getStatusColor(payment.status)}`}>
-          {getStatusLabel(payment.status)}
-        </span>
-      ),
-    },
-    {
-      key: "bukti",
-      header: "Bukti",
       render: (payment: PaymentRow) => {
-        if (payment.payment_proofs) {
-          const proofColor = payment.payment_proofs.status === "approved" ? "bg-success/10 text-success" : payment.payment_proofs.status === "rejected" ? "bg-danger/10 text-danger" : "bg-primary/10 text-primary";
-          return <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${proofColor}`}>{payment.payment_proofs.status}</span>;
-        }
-        return <span className="text-xs text-muted">-</span>;
+        const conf = getStatusConf(payment.status);
+        return (
+          <span
+            className={`inline-block px-2.5 py-1 rounded-lg text-[11px] font-bold ${conf.bg} ${conf.text}`}
+          >
+            {conf.label}
+          </span>
+        );
       },
     },
     {
       key: "payment_date",
-      header: "Tanggal",
-      render: (payment: PaymentRow) => <span className="text-muted">{formatDate(payment.payment_date)}</span>,
+      header: "Waktu Transaksi",
+      render: (payment: PaymentRow) => (
+        <span className="text-xs text-[#7A7A7A]">{formatDate(payment.payment_date)}</span>
+      ),
+      mobileHide: true,
+    },
+    {
+      key: "actions",
+      header: "Aksi",
+      className: "text-right",
+      render: (payment: PaymentRow) => (
+        <a
+          href={`/dashboard/admin/payments/receipt/${payment.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="px-3 py-1.5 bg-[#F5F3EC] border border-[#E5E0D8] text-[#1A1A1A] text-xs font-semibold rounded-xl hover:bg-[#EAE6DC] transition-colors inline-flex items-center gap-1.5"
+        >
+          <Receipt className="h-3.5 w-3.5 text-[#0C3B2E]" />
+          Kwitansi
+        </a>
+      ),
     },
   ];
 
-  const totalPages = Math.ceil(totalRows / pageSize);
+  const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
 
   return (
-    <div className="w-full max-w-7xl space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold text-foreground">Monitoring Pembayaran</h2>
-        <p className="text-sm text-muted">Pantau semua transaksi pembayaran</p>
-      </div>
-
-      {error && (
-        <div className="rounded-md border border-danger/20 bg-danger/10 px-4 py-3">
-          <p className="text-sm text-danger">{error}</p>
+    <PageContainer className="bg-[#F5F3EC] min-h-screen p-3 sm:p-5 md:p-6 text-[#1A1A1A]">
+      <div className="flex flex-col gap-5 sm:gap-6 max-w-[1600px] mx-auto">
+        {/* HEADER */}
+        <div className="bg-white p-5 rounded-[20px] border border-[#E5E0D8] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-[#1A1A1A] tracking-tight">
+            Monitoring & Riwayat Pembayaran
+          </h1>
+          <p className="text-xs sm:text-sm text-[#7A7A7A] mt-0.5">
+            Pantau seluruh realisasi transaksi masuk, status verifikasi, dan pencetakan kwitansi.
+          </p>
         </div>
-      )}
 
-      <Card>
-        <h3 className="text-base font-semibold text-foreground mb-4">Filter</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div>
-            <label htmlFor="paymentSearch" className="block text-xs text-muted mb-1">Cari Siswa (NIS/Nama)</label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
+        {/* ALERTS */}
+        {error && (
+          <div className="rounded-2xl border border-[#A83A32]/30 bg-[#A83A32]/10 p-4">
+            <p className="text-xs sm:text-sm font-semibold text-[#A83A32]">{error}</p>
+          </div>
+        )}
+
+        {/* FILTER BAR */}
+        <div className="bg-white p-4 sm:p-5 rounded-[20px] border border-[#E5E0D8] shadow-[0_2px_10px_rgba(0,0,0,0.02)] space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold text-[#555] uppercase tracking-wider flex items-center gap-1.5">
+              <Filter className="h-3.5 w-3.5 text-[#0C3B2E]" />
+              Filter Transaksi
+            </h3>
+            {(filters.searchQuery ||
+              filters.status !== "all" ||
+              filters.startDate ||
+              filters.endDate) && (
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="text-xs font-bold text-[#A83A32] hover:underline flex items-center gap-1"
+              >
+                <RotateCcw className="h-3 w-3" />
+                Reset Filter
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            {/* SEARCH */}
+            <div>
+              <label htmlFor="paymentSearch" className="block text-[11px] font-bold text-[#7A7A7A] mb-1">
+                Cari Nama / NIS Siswa
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#8A8A8A]" />
+                <input
+                  id="paymentSearch"
+                  type="text"
+                  value={filters.searchQuery}
+                  onChange={(e) => handleFilterChange("searchQuery", e.target.value)}
+                  placeholder="Ketik NIS atau nama..."
+                  className="w-full pl-9 pr-3 py-2 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
+                />
+              </div>
+            </div>
+
+            {/* STATUS */}
+            <div>
+              <label htmlFor="paymentStatus" className="block text-[11px] font-bold text-[#7A7A7A] mb-1">
+                Status Pembayaran
+              </label>
+              <select
+                id="paymentStatus"
+                value={filters.status}
+                onChange={(e) => handleFilterChange("status", e.target.value)}
+                className="w-full px-3 py-2 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
+              >
+                <option value="all">Semua Status</option>
+                <option value="completed">Berhasil</option>
+                <option value="pending">Menunggu</option>
+                <option value="failed">Gagal</option>
+                <option value="cancelled">Dibatalkan</option>
+                <option value="refunded">Dikembalikan</option>
+              </select>
+            </div>
+
+            {/* TANGGAL MULAI */}
+            <div>
+              <label htmlFor="paymentStartDate" className="block text-[11px] font-bold text-[#7A7A7A] mb-1">
+                Tanggal Mulai
+              </label>
               <input
-                id="paymentSearch"
-                type="text"
-                value={filters.searchQuery}
-                onChange={(e) => handleFilterChange("searchQuery", e.target.value)}
-                placeholder="Contoh: NIS123 atau nama siswa"
-                className="sm:h-10 h-11 w-full rounded-md border border-border bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                id="paymentStartDate"
+                type="date"
+                value={filters.startDate}
+                onChange={(e) => handleFilterChange("startDate", e.target.value)}
+                className="w-full px-3 py-2 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
+              />
+            </div>
+
+            {/* TANGGAL AKHIR */}
+            <div>
+              <label htmlFor="paymentEndDate" className="block text-[11px] font-bold text-[#7A7A7A] mb-1">
+                Tanggal Akhir
+              </label>
+              <input
+                id="paymentEndDate"
+                type="date"
+                value={filters.endDate}
+                onChange={(e) => handleFilterChange("endDate", e.target.value)}
+                className="w-full px-3 py-2 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
               />
             </div>
           </div>
-          <div>
-            <label htmlFor="paymentStatus" className="block text-xs text-muted mb-1">Status Pembayaran</label>
-            <select
-              id="paymentStatus"
-              value={filters.status}
-              onChange={(e) => handleFilterChange("status", e.target.value)}
-              className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            >
-              <option value="all">Semua Status</option>
-              <option value="pending">Menunggu</option>
-              <option value="completed">Berhasil</option>
-              <option value="failed">Gagal</option>
-              <option value="cancelled">Dibatalkan</option>
-              <option value="refunded">Dikembalikan</option>
-            </select>
-          </div>
-          <div>
-            <label htmlFor="paymentStartDate" className="block text-xs text-muted mb-1">Tanggal Mulai</label>
-            <input
-              id="paymentStartDate"
-              type="date"
-              value={filters.startDate}
-              onChange={(e) => handleFilterChange("startDate", e.target.value)}
-              className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
-          </div>
-          <div>
-            <label htmlFor="paymentEndDate" className="block text-xs text-muted mb-1">Tanggal Akhir</label>
-            <input
-              id="paymentEndDate"
-              type="date"
-              value={filters.endDate}
-              onChange={(e) => handleFilterChange("endDate", e.target.value)}
-              className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
-          </div>
         </div>
-      </Card>
 
-      <div className="rounded-2xl border border-border bg-surface shadow-sm overflow-hidden">
-        <DataTable
-          columns={columns}
-          data={payments}
-          keyExtractor={(p) => p.id}
-          isLoading={isLoading}
-          emptyTitle="Tidak ada pembayaran"
-          emptyDescription="Belum ada transaksi pembayaran yang tercatat."
-          emptyIcon={<CreditCard className="h-6 w-6" />}
-        />
-        {!isLoading && payments.length > 0 && (
-          <div className="px-6 py-4 border-t border-border flex items-center justify-between">
-            <p className="text-xs text-muted">
-              Menampilkan {payments.length} dari {totalRows} pembayaran
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => handlePageChange(Math.max(1, page - 1))}
-                disabled={page <= 1}
-                className="h-9 px-3 rounded-md border border-border bg-surface text-xs font-semibold hover:bg-muted/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors active:scale-[0.98] min-h-[44px]"
-              >
-                Sebelumnya
-              </button>
-              <span className="text-xs text-muted">
-                Halaman {page} dari {totalPages || 1}
+        {/* DATA TABLE */}
+        <div className="bg-white p-4 sm:p-5 rounded-[20px] border border-[#E5E0D8] shadow-[0_2px_10px_rgba(0,0,0,0.02)] space-y-4">
+          {isLoading ? (
+            <TableSkeleton rows={5} columns={6} />
+          ) : (
+            <DataTable
+              columns={columns}
+              data={payments}
+              keyExtractor={(p) => p.id}
+              emptyTitle="Belum Ada Transaksi Pembayaran"
+              emptyDescription="Tidak ada catatan pembayaran yang cocok dengan kriteria filter."
+            />
+          )}
+
+          {!isLoading && totalRows > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-[#EAE6DC] text-xs text-[#7A7A7A]">
+              <span>
+                Menampilkan {(page - 1) * pageSize + 1} -{" "}
+                {Math.min(page * pageSize, totalRows)} dari {totalRows} pembayaran
               </span>
-              <button
-                onClick={() => handlePageChange(Math.min(totalPages || 1, page + 1))}
-                disabled={page >= (totalPages || 1)}
-                className="h-9 px-3 rounded-md border border-border bg-surface text-xs font-semibold hover:bg-muted/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors active:scale-[0.98] min-h-[44px]"
-              >
-                Selanjutnya
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                  className="px-3 py-1.5 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs font-bold text-[#1A1A1A] disabled:opacity-50"
+                >
+                  Sebelumnya
+                </button>
+                <span className="font-bold text-[#1A1A1A]">
+                  {page} / {totalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages}
+                  className="px-3 py-1.5 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs font-bold text-[#1A1A1A] disabled:opacity-50"
+                >
+                  Selanjutnya
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }

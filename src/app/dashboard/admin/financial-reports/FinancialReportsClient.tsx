@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Download } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { Download, Filter, RotateCcw, Search } from "lucide-react";
+import { PageContainer } from "@/components/layout/PageContainer";
 import { getFinancialSummaryAction, getFinancialTransactionsAction, FinancialReportFilters, FinancialSummary, TransactionRow } from "./actions";
 import { DataTable } from "@/components/operational/data-table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
@@ -189,144 +189,186 @@ export default function FinancialReportsClient({ summary, transactions, filters:
       header: "Siswa",
       render: (item: TransactionRow) => (
         <div>
-          <p className="text-foreground">{item.studentName || "-"}</p>
-          <p className="text-xs text-muted">{item.studentNis || "-"}</p>
+          <p className="font-bold text-[#1A1A1A] text-xs sm:text-sm">{item.studentName || "-"}</p>
+          <p className="text-[11px] font-semibold text-[#7A7A7A]">NIS: {item.studentNis || "-"}</p>
         </div>
       ),
     },
-    { key: "class", header: "Kelas", render: (item: TransactionRow) => item.className || "-", mobileHide: true },
-    { key: "category", header: "Kategori", render: (item: TransactionRow) => item.paymentCategoryName || "-", mobileHide: true },
+    { key: "class", header: "Kelas", render: (item: TransactionRow) => <span className="text-xs text-[#7A7A7A]">{item.className || "-"}</span>, mobileHide: true },
+    { key: "category", header: "Kategori", render: (item: TransactionRow) => <span className="text-xs font-semibold text-[#4A4A4A]">{item.paymentCategoryName || "-"}</span>, mobileHide: true },
     {
       key: "amount",
       header: "Tagihan",
       className: "text-right",
-      render: (item: TransactionRow) => <span className="text-foreground">{formatCurrency(item.billAmount)}</span>,
+      render: (item: TransactionRow) => <span className="font-bold text-xs text-[#1A1A1A]">{formatCurrency(item.billAmount)}</span>,
     },
     {
       key: "paid",
       header: "Dibayar",
       className: "text-right",
-      render: (item: TransactionRow) => <span className="text-success">{formatCurrency(item.paidAmount)}</span>,
+      render: (item: TransactionRow) => <span className="font-extrabold text-xs text-[#0C3B2E]">{formatCurrency(item.paidAmount)}</span>,
     },
     {
       key: "outstanding",
       header: "Outstanding",
       className: "text-right",
-      render: (item: TransactionRow) => <span className="text-primary">{formatCurrency(item.outstanding)}</span>,
+      render: (item: TransactionRow) => <span className="font-extrabold text-xs text-[#A83A32]">{formatCurrency(item.outstanding)}</span>,
     },
     {
       key: "billStatus",
       header: "Status",
       render: (item: TransactionRow) => (
-        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-          item.billStatus === "paid" ? "bg-success/10 text-success" :
-          item.billStatus === "partial" ? "bg-primary/10 text-primary" :
-          item.billStatus === "overdue" ? "bg-danger/10 text-danger" :
-          item.billStatus === "cancelled" ? "bg-muted/20 text-muted" :
-          "bg-muted/20 text-muted"
+        <span className={`inline-block px-2.5 py-1 rounded-lg text-[11px] font-bold ${
+          item.billStatus === "paid" ? "bg-[#0C3B2E]/10 text-[#0C3B2E]" :
+          item.billStatus === "partial" ? "bg-[#2563EB]/10 text-[#2563EB]" :
+          item.billStatus === "overdue" ? "bg-[#A83A32]/10 text-[#A83A32]" :
+          "bg-[#7A7A7A]/10 text-[#7A7A7A]"
         }`}>
           {item.billStatus}
         </span>
       ),
     },
-    { key: "method", header: "Metode", render: (item: TransactionRow) => item.paymentMethodName || "-", mobileHide: true },
-    { key: "date", header: "Tanggal", render: (item: TransactionRow) => item.paymentDate ? formatDate(item.paymentDate) : "-", mobileHide: true },
+    { key: "method", header: "Metode", render: (item: TransactionRow) => <span className="text-xs text-[#7A7A7A]">{item.paymentMethodName || "-"}</span>, mobileHide: true },
+    { key: "date", header: "Tanggal", render: (item: TransactionRow) => <span className="text-xs text-[#7A7A7A]">{item.paymentDate ? formatDate(item.paymentDate) : "-"}</span>, mobileHide: true },
   ];
 
   return (
-    <div className="w-full max-w-7xl space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="w-full space-y-6">
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-5 rounded-[20px] border border-[#E5E0D8] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
         <div>
-          <h2 className="text-lg font-semibold text-foreground">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-[#1A1A1A] tracking-tight">
             Laporan Keuangan
-          </h2>
-          <p className="text-sm text-muted">
-            Rekonsiliasi tagihan, pembayaran, dan bukti pembayaran
+          </h1>
+          <p className="text-xs sm:text-sm text-[#7A7A7A] mt-0.5">
+            Rekonsiliasi tagihan, pembayaran, dan bukti transfer sekolah.
           </p>
         </div>
         <button
           onClick={handleExport}
           disabled={isExporting}
-          className="inline-flex items-center gap-2 h-10 px-4 rounded-md border border-border bg-surface text-sm font-semibold hover:bg-muted/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+          className="px-4 py-2.5 bg-[#0C3B2E] text-white text-xs font-bold rounded-xl hover:bg-[#10523E] transition-all shadow-sm disabled:opacity-50 inline-flex items-center gap-2"
         >
           {isExporting ? (
             <>
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              Mengekspor...
+              <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              <span>Mengekspor...</span>
             </>
           ) : (
             <>
               <Download className="h-4 w-4" />
-              Export CSV
+              <span>Export CSV</span>
             </>
           )}
         </button>
       </div>
 
       {error && (
-        <div className="rounded-md border border-danger/20 bg-danger/10 px-4 py-3">
-          <p className="text-sm text-danger">{error}</p>
+        <div className="rounded-2xl border border-[#A83A32]/30 bg-[#A83A32]/10 p-4">
+          <p className="text-xs sm:text-sm font-semibold text-[#A83A32]">{error}</p>
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <p className="text-xs text-muted mb-1">Total Tagihan</p>
-          <p className="text-2xl font-bold text-foreground">{formatCurrency(reportSummary.totalBillAmount)}</p>
-          <p className="text-xs text-muted mt-1">{reportSummary.totalBills} tagihan</p>
-        </Card>
-        <Card>
-          <p className="text-xs text-muted mb-1">Total Terbayar</p>
-          <p className="text-2xl font-bold text-success">{formatCurrency(reportSummary.totalPaid)}</p>
-          <p className="text-xs text-muted mt-1">Termasuk pending</p>
-        </Card>
-        <Card>
-          <p className="text-xs text-muted mb-1">Pembayaran Pending</p>
-          <p className="text-2xl font-bold text-primary">{formatCurrency(reportSummary.pendingPaymentAmount)}</p>
-          <p className="text-xs text-muted mt-1">{reportSummary.pendingPaymentCount} transaksi</p>
-        </Card>
-        <Card>
-          <p className="text-xs text-muted mb-1">Outstanding</p>
-          <p className="text-2xl font-bold text-foreground">{formatCurrency(reportSummary.totalOutstanding)}</p>
-          <p className="text-xs text-muted mt-1">Sisa tagihan</p>
-        </Card>
-        <Card>
-          <p className="text-xs text-muted mb-1">Tagihan Lunas</p>
-          <p className="text-2xl font-bold text-foreground">{reportSummary.paidBillsCount}</p>
-          <p className="text-xs text-muted mt-1">{reportSummary.partialBillsCount} partial / {reportSummary.overdueBillsCount} overdue</p>
-        </Card>
+      {/* METRICS SUMMARY CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="bg-white p-4 sm:p-5 rounded-[20px] border border-[#E5E0D8] shadow-sm">
+          <span className="text-[11px] font-bold text-[#7A7A7A] uppercase">Total Tagihan</span>
+          <p className="text-xl sm:text-2xl font-extrabold text-[#1A1A1A] mt-1">
+            {formatCurrency(reportSummary.totalBillAmount)}
+          </p>
+          <p className="text-[11px] text-[#7A7A7A] mt-0.5">{reportSummary.totalBills} total tagihan</p>
+        </div>
+
+        <div className="bg-white p-4 sm:p-5 rounded-[20px] border border-[#E5E0D8] shadow-sm">
+          <span className="text-[11px] font-bold text-[#7A7A7A] uppercase">Total Terbayar</span>
+          <p className="text-xl sm:text-2xl font-extrabold text-[#0C3B2E] mt-1">
+            {formatCurrency(reportSummary.totalPaid)}
+          </p>
+          <p className="text-[11px] text-[#7A7A7A] mt-0.5">Termasuk transaksi sukses</p>
+        </div>
+
+        <div className="bg-white p-4 sm:p-5 rounded-[20px] border border-[#E5E0D8] shadow-sm">
+          <span className="text-[11px] font-bold text-[#7A7A7A] uppercase">Pembayaran Pending</span>
+          <p className="text-xl sm:text-2xl font-extrabold text-[#C28E38] mt-1">
+            {formatCurrency(reportSummary.pendingPaymentAmount)}
+          </p>
+          <p className="text-[11px] text-[#7A7A7A] mt-0.5">{reportSummary.pendingPaymentCount} transaksi pending</p>
+        </div>
+
+        <div className="bg-white p-4 sm:p-5 rounded-[20px] border border-[#E5E0D8] shadow-sm">
+          <span className="text-[11px] font-bold text-[#7A7A7A] uppercase">Outstanding</span>
+          <p className="text-xl sm:text-2xl font-extrabold text-[#A83A32] mt-1">
+            {formatCurrency(reportSummary.totalOutstanding)}
+          </p>
+          <p className="text-[11px] text-[#7A7A7A] mt-0.5">Sisa tunggakan</p>
+        </div>
+
+        <div className="bg-white p-4 sm:p-5 rounded-[20px] border border-[#E5E0D8] shadow-sm">
+          <span className="text-[11px] font-bold text-[#7A7A7A] uppercase">Tagihan Lunas</span>
+          <p className="text-xl sm:text-2xl font-extrabold text-[#1A1A1A] mt-1">
+            {reportSummary.paidBillsCount}
+          </p>
+          <p className="text-[11px] text-[#7A7A7A] mt-0.5">
+            {reportSummary.partialBillsCount} cicilan / {reportSummary.overdueBillsCount} overdue
+          </p>
+        </div>
       </div>
 
-      <Card>
-        <h3 className="text-base font-semibold text-foreground mb-4">Filter</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* FILTER BAR */}
+      <div className="bg-white p-5 rounded-[20px] border border-[#E5E0D8] shadow-[0_2px_10px_rgba(0,0,0,0.02)] space-y-4">
+        <div className="flex items-center justify-between border-b border-[#EAE6DC] pb-3">
+          <h3 className="text-xs font-bold text-[#555] uppercase tracking-wider flex items-center gap-1.5">
+            <Filter className="h-3.5 w-3.5 text-[#0C3B2E]" />
+            Filter Laporan Keuangan
+          </h3>
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="text-xs font-bold text-[#A83A32] hover:underline flex items-center gap-1"
+            >
+              <RotateCcw className="h-3 w-3" />
+              Reset Filter ({activeFilterCount})
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <div>
-            <label htmlFor="startDate" className="block text-xs text-muted mb-1">Tanggal Mulai</label>
+            <label htmlFor="startDate" className="block text-[11px] font-bold text-[#7A7A7A] mb-1">
+              Tanggal Mulai
+            </label>
             <input
               id="startDate"
               type="date"
               value={filtersState.startDate}
               onChange={(e) => handleFilterChange("startDate", e.target.value)}
-              className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-3 py-2 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
             />
           </div>
+
           <div>
-            <label htmlFor="endDate" className="block text-xs text-muted mb-1">Tanggal Akhir</label>
+            <label htmlFor="endDate" className="block text-[11px] font-bold text-[#7A7A7A] mb-1">
+              Tanggal Akhir
+            </label>
             <input
               id="endDate"
               type="date"
               value={filtersState.endDate}
               onChange={(e) => handleFilterChange("endDate", e.target.value)}
-              className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-3 py-2 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
             />
           </div>
+
           <div>
-            <label htmlFor="academicYearId" className="block text-xs text-muted mb-1">Tahun Ajaran</label>
+            <label htmlFor="academicYearId" className="block text-[11px] font-bold text-[#7A7A7A] mb-1">
+              Tahun Ajaran
+            </label>
             <select
               id="academicYearId"
               value={filtersState.academicYearId}
               onChange={(e) => handleFilterChange("academicYearId", e.target.value)}
-              className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-3 py-2 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
             >
               <option value="all">Semua Tahun Ajaran</option>
               {filterOptions.academicYears.map((year) => (
@@ -334,13 +376,16 @@ export default function FinancialReportsClient({ summary, transactions, filters:
               ))}
             </select>
           </div>
+
           <div>
-            <label htmlFor="paymentCategoryId" className="block text-xs text-muted mb-1">Kategori Pembayaran</label>
+            <label htmlFor="paymentCategoryId" className="block text-[11px] font-bold text-[#7A7A7A] mb-1">
+              Kategori Pembayaran
+            </label>
             <select
               id="paymentCategoryId"
               value={filtersState.paymentCategoryId}
               onChange={(e) => handleFilterChange("paymentCategoryId", e.target.value)}
-              className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-3 py-2 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
             >
               <option value="all">Semua Kategori</option>
               {filterOptions.categories.map((cat) => (
@@ -348,13 +393,16 @@ export default function FinancialReportsClient({ summary, transactions, filters:
               ))}
             </select>
           </div>
+
           <div>
-            <label htmlFor="classId" className="block text-xs text-muted mb-1">Kelas</label>
+            <label htmlFor="classId" className="block text-[11px] font-bold text-[#7A7A7A] mb-1">
+              Kelas
+            </label>
             <select
               id="classId"
               value={filtersState.classId}
               onChange={(e) => handleFilterChange("classId", e.target.value)}
-              className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-3 py-2 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
             >
               <option value="all">Semua Kelas</option>
               {filterOptions.classes.map((cls) => (
@@ -362,13 +410,16 @@ export default function FinancialReportsClient({ summary, transactions, filters:
               ))}
             </select>
           </div>
+
           <div>
-            <label htmlFor="billStatus" className="block text-xs text-muted mb-1">Status Tagihan</label>
+            <label htmlFor="billStatus" className="block text-[11px] font-bold text-[#7A7A7A] mb-1">
+              Status Tagihan
+            </label>
             <select
               id="billStatus"
               value={filtersState.billStatus}
               onChange={(e) => handleFilterChange("billStatus", e.target.value)}
-              className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-3 py-2 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
             >
               <option value="all">Semua Status</option>
               <option value="pending">Menunggu</option>
@@ -378,13 +429,16 @@ export default function FinancialReportsClient({ summary, transactions, filters:
               <option value="cancelled">Dibatalkan</option>
             </select>
           </div>
+
           <div>
-            <label htmlFor="paymentMethodId" className="block text-xs text-muted mb-1">Metode Pembayaran</label>
+            <label htmlFor="paymentMethodId" className="block text-[11px] font-bold text-[#7A7A7A] mb-1">
+              Metode Pembayaran
+            </label>
             <select
               id="paymentMethodId"
               value={filtersState.paymentMethodId}
               onChange={(e) => handleFilterChange("paymentMethodId", e.target.value)}
-              className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-3 py-2 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
             >
               <option value="all">Semua Metode</option>
               {filterOptions.paymentMethods.map((method) => (
@@ -392,13 +446,16 @@ export default function FinancialReportsClient({ summary, transactions, filters:
               ))}
             </select>
           </div>
+
           <div>
-            <label htmlFor="paymentProofStatus" className="block text-xs text-muted mb-1">Status Bukti Pembayaran</label>
+            <label htmlFor="paymentProofStatus" className="block text-[11px] font-bold text-[#7A7A7A] mb-1">
+              Status Bukti Pembayaran
+            </label>
             <select
               id="paymentProofStatus"
               value={filtersState.paymentProofStatus}
               onChange={(e) => handleFilterChange("paymentProofStatus", e.target.value)}
-              className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-3 py-2 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
             >
               <option value="all">Semua Status</option>
               <option value="pending">Menunggu</option>
@@ -407,58 +464,47 @@ export default function FinancialReportsClient({ summary, transactions, filters:
             </select>
           </div>
         </div>
-        <div className="mt-4">
-          <label htmlFor="studentSearch" className="block text-xs text-muted mb-1">Cari Siswa (NIS/Nama)</label>
-          <input
-            id="studentSearch"
-            type="text"
-            value={filtersState.studentId}
-            onChange={(e) => handleFilterChange("studentId", e.target.value)}
-            placeholder="Cari..."
-             className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-          />
-        </div>
-      </Card>
 
-      {isLoading ? (
-        <TableSkeleton rows={5} columns={8} />
-      ) : (
-        <>
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <p className="text-xs text-muted">
-              Menampilkan {reportTransactions.rows.length} dari {reportTransactions.totalRows} data
-            </p>
-            <div className="flex items-center gap-2">
-              {hasActiveFilters && (
-                <>
-                  <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                    {activeFilterCount} filter aktif
-                  </span>
-                  <button
-                    type="button"
-                    onClick={resetFilters}
-                    className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border bg-surface text-xs font-semibold text-muted hover:text-foreground hover:bg-muted/10 transition-colors min-h-[44px]"
-                  >
-                    Reset
-                  </button>
-                </>
-              )}
-            </div>
+        <div>
+          <label htmlFor="studentSearch" className="block text-[11px] font-bold text-[#7A7A7A] mb-1">
+            Cari Siswa (NIS / Nama)
+          </label>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#8A8A8A]" />
+            <input
+              id="studentSearch"
+              type="text"
+              value={filtersState.studentId}
+              onChange={(e) => handleFilterChange("studentId", e.target.value)}
+              placeholder="Ketik nama atau NIS siswa..."
+              className="w-full pl-9 pr-3 py-2 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
+            />
           </div>
+        </div>
+      </div>
+
+      {/* DATA TABLE CONTAINER */}
+      <div className="bg-white p-4 sm:p-5 rounded-[20px] border border-[#E5E0D8] shadow-[0_2px_10px_rgba(0,0,0,0.02)] space-y-4">
+        {isLoading ? (
+          <TableSkeleton rows={5} columns={8} />
+        ) : (
           <DataTable
             columns={columns}
             data={reportTransactions.rows}
             keyExtractor={(item) => item.billId}
-            emptyTitle="Tidak ada transaksi"
-            emptyDescription="Tidak ada transaksi untuk filter yang dipilih."
-            emptyIcon={
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m-6 0h-.375c-.621 0-1.125-.504-1.125-1.125v-9.75c0-.621.504-1.125 1.125-1.125h.375m6 0h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m-6 0h-.375c-.621 0-1.125-.504-1.125-1.125v-9.75c0-.621.504-1.125 1.125-1.125h.375" />
-              </svg>
-            }
+            emptyTitle="Tidak Ada Data Transaksi"
+            emptyDescription="Tidak ada catatan transaksi atau laporan yang cocok dengan filter yang dipilih."
           />
-        </>
-      )}
+        )}
+
+        {!isLoading && reportTransactions.rows.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-[#EAE6DC] text-xs text-[#7A7A7A]">
+            <span>
+              Menampilkan {reportTransactions.rows.length} dari {reportTransactions.totalRows} data transaksi
+            </span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

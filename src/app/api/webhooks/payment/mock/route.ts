@@ -223,16 +223,22 @@ export async function POST(request: Request) {
     }
 
     try {
-      const { data: payment, error: paymentError } = await supabase.rpc("process_payment", {
-        p_student_bill_id: studentBill.id,
-        p_amount: trustedAmount,
-        p_payment_method_id: String(rawPayload.payment_method_id || ""),
-        p_school_payment_method_id: String(rawPayload.school_payment_method_id || ""),
-        p_reference_number: `GW-${external_order_id}`,
-        p_idempotency_key: `gw-${external_order_id}`,
-      });
+      if (!updatedTransaction.payment_id) {
+        return safeError("Payment not found for gateway transaction", 500);
+      }
 
-      if (paymentError) {
+      const { data: payment, error: paymentError } = await supabase
+        .from("payments")
+        .update({
+          status: "completed",
+          payment_date: new Date().toISOString(),
+        })
+        .eq("id", updatedTransaction.payment_id)
+        .eq("status", "pending")
+        .select("id, student_bill_id")
+        .single();
+
+      if (paymentError || !payment) {
         await supabase
           .from("payment_gateway_transactions")
           .update({
@@ -245,6 +251,28 @@ export async function POST(request: Request) {
         return safeError("Payment processing failed", 500);
       }
 
+      const { data: billData } = await supabase
+        .from("student_bills")
+        .select("id, amount")
+        .eq("id", payment.student_bill_id)
+        .single();
+
+      if (billData) {
+        const { data: totalPaidRow } = await supabase
+          .from("payments")
+          .select("amount")
+          .eq("student_bill_id", billData.id)
+          .in("status", ["completed", "pending"]);
+
+        const totalPaid = (totalPaidRow || []).reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+        const newBillStatus = totalPaid >= Number(billData.amount) ? "paid" : totalPaid > 0 ? "partial" : "pending";
+
+        await supabase
+          .from("student_bills")
+          .update({ status: newBillStatus, updated_at: new Date().toISOString() })
+          .eq("id", billData.id);
+      }
+
       const updatePayload: Record<string, unknown> = {
         provider_status: "success",
         updated_at: new Date().toISOString(),
@@ -253,7 +281,7 @@ export async function POST(request: Request) {
           ...rawPayload,
           webhook_payload: payload,
         },
-        payment_id: payment,
+        payment_id: updatedTransaction.payment_id,
       };
 
       if (external_transaction_id) {
@@ -290,32 +318,62 @@ export async function POST(request: Request) {
   }
 
   if (normalizedStatus === "failed" || normalizedStatus === "cancelled" || normalizedStatus === "expired") {
-    const updatePayload: Record<string, unknown> = {
-      provider_status: normalizedStatus,
-      updated_at: now,
-      webhook_received_at: now,
-      raw_payload: {
-        ...rawPayload,
-        webhook_payload: payload,
-      },
+    const paymentStatusMap: Record<string, string> = {
+      failed: "failed",
+      cancelled: "cancelled",
+      expired: "failed",
     };
 
-    if (external_transaction_id) {
-      updatePayload.external_transaction_id = external_transaction_id;
-    }
+    const newPaymentStatus = paymentStatusMap[normalizedStatus] || "failed";
 
-    if (payment_method_type) {
-      updatePayload.payment_method_type = payment_method_type;
-    }
-
-    const { error: updateError } = await supabase
+    const { data: updatedTransaction, error: updateError } = await supabase
       .from("payment_gateway_transactions")
-      .update(updatePayload)
+      .update({
+        provider_status: normalizedStatus,
+        updated_at: now,
+        webhook_received_at: now,
+        raw_payload: {
+          ...rawPayload,
+          webhook_payload: payload,
+        },
+      })
       .eq("id", gatewayTransaction.id)
-      .in("provider_status", ["pending", "processing", "failed"]);
+      .in("provider_status", ["pending", "processing", "failed"])
+      .select("id, provider_status, payment_id")
+      .single();
 
-    if (updateError) {
+    if (updateError || !updatedTransaction) {
       return safeError("Failed to update gateway transaction", 500);
+    }
+
+    if (updatedTransaction.payment_id) {
+      await supabase
+        .from("payments")
+        .update({ status: newPaymentStatus, updated_at: now })
+        .eq("id", updatedTransaction.payment_id);
+
+      const { data: paymentData } = await supabase
+        .from("payments")
+        .select("student_bill_id")
+        .eq("id", updatedTransaction.payment_id)
+        .single();
+
+      if (paymentData?.student_bill_id) {
+        const { data: otherCompleted } = await supabase
+          .from("payments")
+          .select("id", { count: "exact", head: true })
+          .eq("student_bill_id", paymentData.student_bill_id)
+          .in("status", ["completed", "pending"])
+          .neq("id", updatedTransaction.payment_id);
+
+        const hasOtherValid = (otherCompleted as unknown as { count?: number } | null)?.count && (otherCompleted as unknown as { count: number }).count > 0;
+        const newBillStatus = hasOtherValid ? "partial" : "pending";
+
+        await supabase
+          .from("student_bills")
+          .update({ status: newBillStatus, updated_at: now })
+          .eq("id", paymentData.student_bill_id);
+      }
     }
 
     return NextResponse.json({ status: "accepted", provider_status: normalizedStatus }, { status: 200 });

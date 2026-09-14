@@ -42,6 +42,7 @@ export default async function AdminDashboard() {
   const summary = summaryResult.summary ?? {};
   const pendingProofCount = summary.pendingProofCount ?? 0;
   const pendingPaymentCount = summary.pendingPaymentCount ?? 0;
+  const pendingPaymentAmount = summary.pendingPaymentAmount ?? 0;
   const totalBillAmount = summary.totalBillAmount ?? 0;
   const totalOutstanding = summary.totalOutstanding ?? 0;
   const totalPaid = summary.totalPaid ?? 0;
@@ -108,7 +109,7 @@ export default async function AdminDashboard() {
             <FadeIn delay={0} className="h-full">
               <StatCard
                 title="Total Pemasukan"
-                value={formatCurrency(totalBillAmount || 575000)}
+                value={formatCurrency(totalPaid)}
                 subtitle="Bulan Ini"
                 icon="Receipt"
                 colorVariant="green"
@@ -118,7 +119,7 @@ export default async function AdminDashboard() {
             <FadeIn delay={0.1} className="h-full">
               <StatCard
                 title="Tunggakan Siswa"
-                value={formatCurrency(totalOutstanding || 375000)}
+                value={formatCurrency(totalOutstanding)}
                 subtitle="Sisa tagihan"
                 icon="Users"
                 colorVariant="yellow"
@@ -128,7 +129,7 @@ export default async function AdminDashboard() {
             <FadeIn delay={0.2} className="h-full">
               <StatCard
                 title="Permintaan Verifikasi"
-                value={(pendingProofCount || 13).toString()}
+                value={pendingProofCount.toString()}
                 subtitle="Pending verifikasi"
                 icon="FileCheck"
                 colorVariant="blue"
@@ -138,7 +139,7 @@ export default async function AdminDashboard() {
               <StatCard
                 accent
                 title="Tagihan Lunas"
-                value={formatCurrency(totalPaid || 200000)}
+                value={formatCurrency(totalPaid)}
                 subtitle="Lunas"
                 icon="CreditCard"
                 colorVariant="teal"
@@ -150,9 +151,9 @@ export default async function AdminDashboard() {
           {/* WIDGET 1: OVERDUE ALERT WARNING BOX */}
           <FadeIn delay={0.35}>
             <OverdueAlertWidget
-              overdueCount={pendingPaymentCount || 12}
-              totalOverdueAmount={totalOutstanding || 4200000}
-              dueDateLabel="10 September 2026"
+              overdueCount={pendingPaymentCount}
+              totalOverdueAmount={pendingPaymentAmount}
+              dueDateLabel="Jatuh Tempo Berjalan"
             />
           </FadeIn>
 

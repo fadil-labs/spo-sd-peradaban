@@ -35,6 +35,7 @@ export async function getPaymentCategoriesAction() {
     .order("name", { ascending: true });
 
   if (categoriesError) {
+    console.error("[getPaymentCategoriesAction Error]", categoriesError);
     return { error: "Gagal memuat data kategori pembayaran." };
   }
 

@@ -46,6 +46,7 @@ export async function getSchoolPaymentMethodsAction() {
     .order("payment_methods(name)", { ascending: true });
 
   if (schoolMethodsError) {
+    console.error("[getSchoolPaymentMethodsAction Error]", schoolMethodsError);
     return { error: "Gagal memuat data metode pembayaran." };
   }
 
@@ -56,26 +57,32 @@ export async function getSchoolPaymentMethodsAction() {
     .order("name", { ascending: true });
 
   if (allMethodsError) {
+    console.error("[getSchoolPaymentMethodsAction Error]", allMethodsError);
     return { error: "Gagal memuat daftar metode pembayaran." };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const enabledIds = new Set((schoolMethods || []).map((m: any) => m.payment_method_id));
+  const enabledIds = (schoolMethods || []).map((m: any) => m.payment_method_id);
+
+  const normalizedSchoolMethods = (schoolMethods || []).map((m: any) => ({
+    id: m.id,
+    payment_method_id: m.payment_method_id,
+    is_active: m.is_active,
+    payment_methods: Array.isArray(m.payment_methods)
+      ? m.payment_methods[0]
+      : m.payment_methods,
+  }));
 
   return {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    schoolMethods: (schoolMethods || []).map((m: any) => ({
-      id: m.id,
-      payment_method_id: m.payment_method_id,
-      is_active: m.is_active,
-      payment_methods: Array.isArray(m.payment_methods) ? m.payment_methods[0] : m.payment_methods,
-    })),
+    schoolMethods: normalizedSchoolMethods,
     allMethods: allMethods || [],
     enabledIds,
   };
 }
 
-export async function toggleSchoolPaymentMethodAction(paymentMethodId: string, currentStatus: boolean) {
+export async function toggleSchoolPaymentMethodAction(
+  paymentMethodId: string,
+  currentStatus: boolean
+) {
   const supabase = await createClient();
 
   const {

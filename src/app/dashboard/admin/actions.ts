@@ -77,8 +77,9 @@ export async function getAdminDashboardSummaryAction(): Promise<AdminDashboardRe
     supabase
       .from("payments")
       .select("id, amount, status, student_bill_id, payment_date, payment_methods (name)", { count: "exact" })
+      .eq("school_id", profile.school_id)
       .not("student_bill_id", "is", null)
-      .in("status", ["completed", "pending"]),
+      .in("status", ["completed", "success", "pending"]),
     supabase
       .from("payment_proofs")
       .select("id, status", { count: "exact" })
@@ -123,14 +124,17 @@ export async function getAdminDashboardSummaryAction(): Promise<AdminDashboardRe
   const payments = paymentsResult.data || [];
 
   const totalBillAmount = bills.reduce((sum, b) => sum + (b.amount || 0), 0);
+  
+  // Total Pemasukan / Tagihan Lunas hanya menghitung yang berstatus completed atau success
   const totalPaid = payments
-    .filter((p) => p.status === "completed" || p.status === "pending")
+    .filter((p) => p.status === "completed" || p.status === "success")
     .reduce((sum, p) => sum + (p.amount || 0), 0);
+
   const totalOutstanding = Math.max(0, totalBillAmount - totalPaid);
-  const pendingPaymentCount = payments.filter((p) => p.status === "pending").length;
-  const pendingPaymentAmount = payments
-    .filter((p) => p.status === "pending")
-    .reduce((sum, p) => sum + (p.amount || 0), 0);
+  
+  const pendingPayments = payments.filter((p) => p.status === "pending");
+  const pendingPaymentCount = pendingPayments.length;
+  const pendingPaymentAmount = pendingPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
 
   const normalizedRecentPayments = (recentPaymentsResult.data || []).map((p) => ({
     id: p.id,
@@ -165,7 +169,10 @@ export async function getAdminDashboardSummaryAction(): Promise<AdminDashboardRe
     EWallet: "#7c3aed",
   };
 
+  // Grafik bulanan dan komposisi hanya mengambil data pembayaran yang sukses
   for (const payment of payments) {
+    if (payment.status !== "completed" && payment.status !== "success") continue;
+
     const date = new Date(payment.payment_date);
     const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
     monthlyMap.set(key, (monthlyMap.get(key) || 0) + (payment.amount || 0));

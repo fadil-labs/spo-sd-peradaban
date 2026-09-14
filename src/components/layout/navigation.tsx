@@ -1,4 +1,4 @@
-import { type LucideIcon, LayoutDashboard, Users, UserCheck, School, GraduationCap, Receipt, FileCheck, CreditCard, Tag, Landmark, BarChart3, Bell, ScrollText, Settings, UserCog, Wand2 } from "lucide-react";
+import { type LucideIcon, LayoutDashboard, Users, UserCheck, School, GraduationCap, Receipt, FileCheck, CreditCard, Tag, Landmark, BarChart3, Bell, ScrollText, Settings, UserCog, Wand2, History } from "lucide-react";
 
 export type Profile = {
   id: string;
@@ -43,6 +43,7 @@ const adminGroups: NavGroup[] = [
     items: [
       { label: "Student Bills", href: "/dashboard/admin/student-bills", icon: Receipt },
       { label: "Payment Proofs", href: "/dashboard/admin/payment-proofs", icon: FileCheck },
+      { label: "Riwayat Pembayaran", href: "/dashboard/admin/payments", icon: History }, // <-- Ditambahkan di sini
       { label: "Payment Gateway", href: "/dashboard/admin/payment-gateway", icon: CreditCard },
       { label: "Payment Categories", href: "/dashboard/admin/payment-categories", icon: Tag },
       { label: "School Payment Methods", href: "/dashboard/admin/school-payment-methods", icon: Landmark },
@@ -73,6 +74,7 @@ const bendaharaGroups: NavGroup[] = [
     items: [
       { label: "Student Bills", href: "/dashboard/admin/student-bills", icon: Receipt },
       { label: "Payment Proofs", href: "/dashboard/admin/payment-proofs", icon: FileCheck },
+      { label: "Riwayat Pembayaran", href: "/dashboard/admin/payments", icon: History }, // <-- Ditambahkan juga untuk bendahara
       { label: "Payment Gateway", href: "/dashboard/admin/payment-gateway", icon: CreditCard },
       { label: "Financial Reports", href: "/dashboard/admin/financial-reports", icon: BarChart3 },
       { label: "Audit Logs", href: "/dashboard/admin/financial-audit-logs", icon: ScrollText },

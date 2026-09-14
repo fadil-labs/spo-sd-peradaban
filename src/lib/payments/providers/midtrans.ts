@@ -15,8 +15,28 @@ function mapMidtransStatus(status: string): PaymentStatus {
 export class MidtransPaymentProvider implements PaymentProviderAdapter {
   async createPaymentIntent(request: PaymentIntentRequest): Promise<PaymentIntentResult> {
     const orderId = request.externalOrderId || `SPO-${Date.now()}`;
+    const methodType = request.paymentMethodType;
+
+    let paymentType = 'bank_transfer';
+    let extraPayload: Record<string, unknown> = {};
+
+    if (methodType === 'QRIS') {
+      paymentType = 'qris';
+    } else if (methodType === 'VA') {
+      paymentType = 'bank_transfer';
+      extraPayload = { bank_transfer: { bank: 'bca' } };
+    } else if (methodType === 'BANK_TRANSFER') {
+      paymentType = 'bank_transfer';
+      extraPayload = { bank_transfer: { bank: 'bca' } };
+    } else if (methodType === 'E_WALLET') {
+      paymentType = 'gopay';
+    } else if (methodType === 'MANUAL') {
+      paymentType = 'bank_transfer';
+      extraPayload = { bank_transfer: { bank: 'bca' } };
+    }
+
     const payload = {
-      payment_type: 'bank_transfer',
+      payment_type: paymentType,
       transaction_details: {
         order_id: orderId,
         gross_amount: request.amount,
@@ -32,9 +52,7 @@ export class MidtransPaymentProvider implements PaymentProviderAdapter {
           quantity: 1,
         },
       ],
-      bank_transfer: {
-        bank: 'bca',
-      },
+      ...extraPayload,
     };
 
     const result = await midtrans.createPayment(payload);

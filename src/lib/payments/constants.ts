@@ -1,5 +1,29 @@
 import { PaymentProvider, PaymentMethodType, PaymentCapability } from './types';
 
+const DB_METHOD_TYPE_TO_ENUM: Record<string, PaymentMethodType> = {
+  cash: 'MANUAL',
+  transfer: 'BANK_TRANSFER',
+  e_wallet: 'E_WALLET',
+  virtual_account: 'VA',
+};
+
+export function toPaymentMethodType(methodType: string | null | undefined, name?: string | null): PaymentMethodType {
+  if (!methodType) {
+    return 'MANUAL';
+  }
+
+  const normalized = methodType.toLowerCase();
+
+  if (normalized === 'e_wallet') {
+    if (name && name.toLowerCase() === 'qris') {
+      return 'QRIS';
+    }
+    return 'E_WALLET';
+  }
+
+  return DB_METHOD_TYPE_TO_ENUM[normalized] || 'MANUAL';
+}
+
 export const PROVIDER_CAPABILITIES: Record<PaymentProvider, PaymentCapability> = {
   mock: {
     provider: 'mock',

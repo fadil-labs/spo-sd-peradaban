@@ -1,315 +1,441 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Loader2, Receipt } from "lucide-react";
-import Link from "next/link";
-import { Card } from "@/components/ui/card";
-import { EmptyState } from "@/components/ui/empty-state";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { PageContainer } from "@/components/layout/PageContainer";
 import { useToast } from "@/components/ui/toast";
 import { processPaymentAction } from "../actions";
+import { InstallmentPlanSetup } from "@/components/payments/InstallmentPlanSetup";
+import {
+  ArrowLeft,
+  PlusCircle,
+  X,
+  Receipt,
+} from "lucide-react";
 
-type Bill = {
-  id: string;
-  amount: number;
-  status: string;
-  billing_period_start: string | null;
-  billing_period_end: string | null;
-  is_recurring: boolean;
-  due_date: string | null;
-  created_at: string;
-  students: { id: string; nis: string; full_name: string } | null;
-  payment_categories: { id: string; name: string; allow_installments: boolean; minimum_installment_amount: number | null } | null;
+type BillDetailProps = {
+  bill: {
+    id: string;
+    school_id: string;
+    student_id: string;
+    amount: number;
+    status: string;
+    billing_period_start: string | null;
+    billing_period_end: string | null;
+    is_recurring: boolean;
+    due_date: string | null;
+    installment_plan: {
+      total_installments: number;
+      installment_amount: number;
+      current_installment: number;
+      paid_installments: number[];
+      installments?: Array<{
+        number: number;
+        amount: number;
+        due_date: string;
+        status: string;
+      }>;
+    } | null;
+    students?: { id: string; nis: string; full_name: string };
+    payment_categories?: {
+      id: string;
+      name: string;
+      allow_installments: boolean;
+      minimum_installment_amount: number | null;
+      require_installment_schedule?: boolean;
+    };
+  };
+  payments: {
+    id: string;
+    amount: number;
+    payment_date: string;
+    reference_number: string;
+    status: string;
+    payment_methods?: { id: string; name: string; method_type: string };
+  }[];
+  paymentMethods: { id: string; name: string; method_type: string }[];
+  schoolPaymentMethods: {
+    id: string;
+    payment_method_id: string;
+    is_active: boolean;
+    payment_methods?: { id: string; name: string; method_type: string };
+  }[];
 };
 
-type Payment = {
-  id: string;
-  amount: number;
-  payment_date: string;
-  reference_number: string | null;
-  status: string;
-  payment_methods: { id: string; name: string; method_type: string | null } | null;
-};
-
-type Props = {
-  bill: Bill;
-  payments: Payment[];
-  paymentMethods: { id: string; name: string; method_type: string | null }[];
-  schoolPaymentMethods: { id: string; payment_method_id: string; is_active: boolean; payment_methods: { id: string; name: string; method_type: string | null } | null }[];
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: "Menunggu",
-  partial: "Cicilan",
-  paid: "Lunas",
-  overdue: "Terlambat",
-  cancelled: "Dibatalkan",
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-muted/20 text-muted",
-  partial: "bg-primary/10 text-primary",
-  paid: "bg-success/10 text-success",
-  overdue: "bg-danger/10 text-danger",
-  cancelled: "bg-danger/10 text-danger",
-};
-
-export default function BillDetailClient({ bill, payments, paymentMethods, schoolPaymentMethods }: Props) {
-  const [amount, setAmount] = useState("");
-  const [paymentMethodId, setPaymentMethodId] = useState("");
-  const [schoolPaymentMethodId, setSchoolPaymentMethodId] = useState("");
-  const [referenceNumber, setReferenceNumber] = useState("");
-  const [idempotencyKey, setIdempotencyKey] = useState(() => `pay_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+export default function BillDetailClient({
+  bill,
+  payments: initialPayments,
+  schoolPaymentMethods,
+}: BillDetailProps) {
+  const router = useRouter();
   const toast = useToast();
 
-  useEffect(() => {
-    if (paymentMethods.length > 0 && !paymentMethodId) {
-      setPaymentMethodId(paymentMethods[0].id);
-    }
-  }, [paymentMethods, paymentMethodId]);
+  const [payments, setPayments] = useState(initialPayments);
+  const [billStatus, setBillStatus] = useState(bill.status);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [selectedSchoolPaymentMethodId, setSelectedSchoolPaymentMethodId] = useState("");
+  const [referenceNumber, setReferenceNumber] = useState("");
 
-  useEffect(() => {
-    if (paymentMethodId && schoolPaymentMethods.length > 0 && !schoolPaymentMethodId) {
-      const defaultMethod = schoolPaymentMethods.find(spm => spm.payment_method_id === paymentMethodId && spm.is_active);
-      if (defaultMethod) {
-        setSchoolPaymentMethodId(defaultMethod.id);
-      }
-    }
-  }, [paymentMethodId, schoolPaymentMethods, schoolPaymentMethodId]);
+  const uniqueSchoolPaymentMethods = useMemo(() => {
+    const seen = new Set<string>();
+    return schoolPaymentMethods.filter((spm) => {
+      const key = spm.payment_method_id || spm.id;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [schoolPaymentMethods]);
+
+  const formatCurrency = (val: number) =>
+    new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(val);
+
+  const formatDate = (date: string | null) =>
+    date
+      ? new Date(date).toLocaleDateString("id-ID", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        })
+      : "-";
 
   const totalPaid = payments
-    .filter((p) => p.status === "completed" || p.status === "pending")
+    .filter((p) => p.status === "completed")
     .reduce((sum, p) => sum + p.amount, 0);
+  const remainingBalance = Math.max(0, bill.amount - totalPaid);
 
-  const remaining = Math.max(0, bill.amount - totalPaid);
-  const canPay = bill.status !== "paid" && bill.status !== "cancelled" && remaining > 0;
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleProcessPayment = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!paymentAmount && !bill.installment_plan) {
+      toast.addToast("error", "Isi jumlah dan pilih metode pembayaran.");
+      return;
+    }
+
+    if (!selectedSchoolPaymentMethodId) {
+      toast.addToast("error", "Pilih metode pembayaran.");
+      return;
+    }
+
+    const schoolMethod = uniqueSchoolPaymentMethods.find((spm) => spm.id === selectedSchoolPaymentMethodId);
+    if (!schoolMethod) {
+      toast.addToast("error", "Metode pembayaran tidak valid.");
+      return;
+    }
+
     setIsSubmitting(true);
-    setError(null);
-    setSuccess(false);
+    const amountNum = bill.installment_plan ? Number(bill.installment_plan.installment_amount) : Number(paymentAmount);
+    const idempotencyKey = `pay_${bill.id}_${Date.now()}`;
 
     const result = await processPaymentAction(
       bill.id,
-      Number(amount),
-      paymentMethodId,
-      schoolPaymentMethodId,
-      referenceNumber,
+      amountNum,
+      schoolMethod.payment_method_id,
+      schoolMethod.id,
+      referenceNumber || `REF-${Date.now()}`,
       idempotencyKey
     );
 
-    if (result?.error) {
-      setError(result.error);
+    if (result.error) {
       toast.addToast("error", result.error);
-      setIsSubmitting(false);
     } else {
-      setSuccess(true);
-      toast.addToast("success", "Pembayaran berhasil diproses.");
-      setAmount("");
+      toast.addToast("success", "Pembayaran berhasil dicatat.");
+      setShowPaymentModal(false);
+      setPaymentAmount("");
       setReferenceNumber("");
-      setIdempotencyKey(`pay_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`);
-      setIsSubmitting(false);
+
+      const newPayment = {
+        id: result.paymentId || String(Date.now()),
+        amount: amountNum,
+        payment_date: new Date().toISOString(),
+        reference_number: referenceNumber || `REF-${Date.now()}`,
+        status: "completed",
+        payment_methods: schoolMethod.payment_methods,
+      };
+
+      setPayments([newPayment, ...payments]);
+      const updatedTotalPaid = totalPaid + amountNum;
+      if (updatedTotalPaid >= bill.amount) {
+        setBillStatus("paid");
+      } else {
+        setBillStatus("partial");
+      }
     }
+    setIsSubmitting(false);
   };
 
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(value);
-
-  const formatDate = (date: string) => new Date(date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
-
   return (
-    <div className="w-full max-w-3xl space-y-6">
-      <Card>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-foreground">Detail Tagihan</h2>
-          <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[bill.status] || "bg-muted/20 text-muted"}`}>
-            {STATUS_LABELS[bill.status] || bill.status}
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <p className="text-xs text-muted mb-1">Siswa</p>
-            <p className="text-sm font-medium text-foreground">{bill.students?.full_name || "-"}</p>
-            <p className="text-xs text-muted">{bill.students?.nis || "-"}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted mb-1">Kategori</p>
-            <p className="text-sm font-medium text-foreground">{bill.payment_categories?.name || "-"}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted mb-1">Jumlah Tagihan</p>
-            <p className="text-sm font-medium text-foreground">{formatCurrency(bill.amount)}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted mb-1">Jatuh Tempo</p>
-            <p className="text-sm font-medium text-foreground">{bill.due_date ? formatDate(bill.due_date) : "-"}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted mb-1">Total Terbayar</p>
-            <p className="text-sm font-medium text-foreground">{formatCurrency(totalPaid)}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted mb-1">Sisa</p>
-            <p className="text-sm font-medium text-foreground">{formatCurrency(remaining)}</p>
-          </div>
-        </div>
-      </Card>
-
-      {canPay && (
-        <Card>
-          <h3 className="text-base font-semibold text-foreground mb-4">
-            Tambah Pembayaran
-          </h3>
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="amount" className="block text-xs text-muted mb-1.5">
-                  Jumlah Pembayaran
-                </label>
-                <input
-                  id="amount"
-                  type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                   className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="100000"
-                  required
-                  min="1"
-                  max={remaining}
-                  step="1000"
-                  disabled={isSubmitting}
-                />
-                <p className="mt-1 text-xs text-muted">Sisa: {formatCurrency(remaining)}</p>
+    <PageContainer className="bg-[#F5F3EC] min-h-screen p-3 sm:p-5 md:p-6 text-[#1A1A1A]">
+      <div className="flex flex-col gap-5 sm:gap-6 max-w-[1600px] mx-auto">
+        {/* HEADER */}
+        <div className="bg-white p-5 rounded-[20px] border border-[#E5E0D8] shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <button
+              onClick={() => router.push("/dashboard/admin/student-bills")}
+              className="p-2 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl hover:bg-[#EAE6DC] transition-colors mt-0.5"
+            >
+              <ArrowLeft className="h-4 w-4 text-[#1A1A1A]" />
+            </button>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl sm:text-2xl font-extrabold text-[#1A1A1A] tracking-tight">
+                  Tagihan {bill.payment_categories?.name || "Siswa"}
+                </h1>
+                <span
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
+                    billStatus === "paid"
+                      ? "bg-[#0C3B2E]/10 text-[#0C3B2E]"
+                      : billStatus === "partial"
+                      ? "bg-[#2563EB]/10 text-[#2563EB]"
+                      : "bg-[#C28E38]/10 text-[#C28E38]"
+                  }`}
+                >
+                  {billStatus === "paid"
+                    ? "Lunas"
+                    : billStatus === "partial"
+                    ? "Sebagian"
+                    : "Belum Bayar"}
+                </span>
               </div>
+              <p className="text-xs sm:text-sm text-[#7A7A7A] mt-0.5">
+                Siswa: <span className="font-bold text-[#1A1A1A]">{bill.students?.full_name}</span>{" "}
+                (NIS: {bill.students?.nis})
+              </p>
+            </div>
+          </div>
 
-              <div>
-                <label htmlFor="reference_number" className="block text-xs text-muted mb-1.5">
-                  Nomor Referensi
-                </label>
-                <input
-                  id="reference_number"
-                  type="text"
-                  value={referenceNumber}
-                  onChange={(e) => setReferenceNumber(e.target.value)}
-                   className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="INV-001"
-                  disabled={isSubmitting}
-                />
+          <div className="flex items-center gap-2">
+            {remainingBalance > 0 && billStatus !== "cancelled" && (
+              <button
+                onClick={() => setShowPaymentModal(true)}
+                className="px-4 py-2 bg-[#0C3B2E] text-white text-xs font-bold rounded-xl hover:bg-[#10523E] transition-all shadow-sm inline-flex items-center gap-2"
+              >
+                <PlusCircle className="h-4 w-4" />
+                <span>Catat Pembayaran</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* METRICS */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white p-4 rounded-[20px] border border-[#E5E0D8] shadow-sm">
+            <span className="text-[11px] font-bold text-[#7A7A7A] uppercase">Total Tagihan</span>
+            <p className="text-xl font-extrabold text-[#1A1A1A] mt-1">
+              {formatCurrency(bill.amount)}
+            </p>
+          </div>
+
+          <div className="bg-white p-4 rounded-[20px] border border-[#E5E0D8] shadow-sm">
+            <span className="text-[11px] font-bold text-[#7A7A7A] uppercase">Total Dibayar</span>
+            <p className="text-xl font-extrabold text-[#0C3B2E] mt-1">
+              {formatCurrency(totalPaid)}
+            </p>
+          </div>
+
+          <div className="bg-white p-4 rounded-[20px] border border-[#E5E0D8] shadow-sm">
+            <span className="text-[11px] font-bold text-[#7A7A7A] uppercase">Sisa Tunggakan</span>
+            <p className="text-xl font-extrabold text-[#A83A32] mt-1">
+              {formatCurrency(remainingBalance)}
+            </p>
+          </div>
+        </div>
+
+        {/* INSTALLMENT INFO */}
+        {bill.installment_plan && (
+          <div className="bg-white p-5 rounded-[20px] border border-[#C28E38]/30 shadow-sm space-y-3">
+            <div className="flex items-center justify-between border-b border-[#E5E0D8] pb-3">
+              <h3 className="text-base font-bold text-[#1A1A1A]">Informasi Cicilan</h3>
+              <span className="inline-flex rounded-full px-3 py-1 text-xs font-bold bg-[#C28E38]/15 text-[#C28E38]">
+                Cicilan {bill.installment_plan.current_installment} / {bill.installment_plan.total_installments}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="p-4 rounded-2xl bg-[#F5F3EC] border border-[#E5E0D8] space-y-1">
+                <span className="text-[11px] font-bold text-[#7A7A7A] uppercase">Nominal Cicilan</span>
+                <p className="text-sm font-black text-[#1A1A1A]">
+                  {formatCurrency(Number(bill.installment_plan.installment_amount || 0))}
+                </p>
+              </div>
+              <div className="p-4 rounded-2xl bg-[#F5F3EC] border border-[#E5E0D8] space-y-1">
+                <span className="text-[11px] font-bold text-[#7A7A7A] uppercase">Total Cicilan</span>
+                <p className="text-sm font-black text-[#1A1A1A]">{bill.installment_plan.total_installments}x</p>
+              </div>
+              <div className="p-4 rounded-2xl bg-[#F5F3EC] border border-[#E5E0D8] space-y-1">
+                <span className="text-[11px] font-bold text-[#7A7A7A] uppercase">Sisa Cicilan</span>
+                <p className="text-sm font-black text-[#C28E38]">
+                  {bill.installment_plan.total_installments - bill.installment_plan.current_installment + 1}x
+                </p>
               </div>
             </div>
+          </div>
+        )}
 
-              <div>
-                <label htmlFor="payment_method_id" className="block text-xs text-muted mb-1.5">
-                  Metode Pembayaran
-                </label>
-                <select
-                  id="payment_method_id"
-                  value={paymentMethodId}
-                  onChange={(e) => {
-                    setPaymentMethodId(e.target.value);
-                    setSchoolPaymentMethodId("");
-                  }}
-                  className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  required
-                  disabled={isSubmitting}
-                >
-                  <option value="">Pilih metode</option>
-                  {paymentMethods.map((pm) => (
-                    <option key={pm.id} value={pm.id}>{pm.name}</option>
-                  ))}
-                </select>
-              </div>
+        {/* INSTALLMENT PLAN SETUP */}
+        {!bill.installment_plan && bill.payment_categories?.allow_installments && (
+          <InstallmentPlanSetup
+            billId={bill.id}
+            billAmount={bill.amount}
+            existingPlan={null}
+            onSuccess={() => router.refresh()}
+          />
+        )}
 
-              {paymentMethodId && (
+        {/* MODAL CATAT PEMBAYARAN */}
+        {showPaymentModal && (
+          <div className="bg-white p-5 rounded-[20px] border border-[#E5E0D8] shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-[#EAE6DC] pb-3">
+              <h3 className="text-base font-bold text-[#1A1A1A]">
+                Catat Pembayaran Offline / Tunai
+              </h3>
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="text-[#8A8A8A] hover:text-black"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleProcessPayment} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="school_payment_method_id" className="block text-xs text-muted mb-1.5">
-                    Konfigurasi Sekolah
+                  <label htmlFor="payment_amount" className="block text-xs font-bold text-[#555] mb-1">
+                    Jumlah Pembayaran (Rp)
+                    {bill.installment_plan && (
+                      <span className="ml-2 text-[#C28E38]">
+                        (Cicilan {bill.installment_plan.current_installment}/{bill.installment_plan.total_installments})
+                      </span>
+                    )}
+                  </label>
+                  <input
+                    id="payment_amount"
+                    type="number"
+                    value={bill.installment_plan ? bill.installment_plan.installment_amount : paymentAmount}
+                    onChange={(e) => setPaymentAmount(e.target.value)}
+                    placeholder={`Maksimal ${remainingBalance}`}
+                    className="w-full px-3.5 py-2.5 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
+                    max={remainingBalance}
+                    required
+                    disabled={isSubmitting || !!bill.installment_plan}
+                    readOnly={!!bill.installment_plan}
+                  />
+                  {bill.installment_plan && (
+                    <p className="text-[11px] text-[#7A7A7A] mt-1">
+                      Nominal cicilan ditetapkan dan tidak dapat diubah.
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="school_method" className="block text-xs font-bold text-[#555] mb-1">
+                    Metode Pembayaran
                   </label>
                   <select
-                    id="school_payment_method_id"
-                    value={schoolPaymentMethodId}
-                    onChange={(e) => setSchoolPaymentMethodId(e.target.value)}
-                    className="sm:h-10 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    id="school_method"
+                    value={selectedSchoolPaymentMethodId}
+                    onChange={(e) => setSelectedSchoolPaymentMethodId(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
                     required
                     disabled={isSubmitting}
                   >
-                    <option value="">Pilih konfigurasi</option>
-                    {schoolPaymentMethods
-                      .filter(spm => spm.payment_method_id === paymentMethodId)
-                      .map((spm) => (
-                        <option key={spm.id} value={spm.id}>
-                          {spm.payment_methods?.name || "Konfigurasi"} {spm.is_active ? "" : "(Nonaktif)"}
-                        </option>
-                      ))}
+                    <option value="">-- Pilih Metode --</option>
+                     {uniqueSchoolPaymentMethods.map((spm) => (
+                      <option key={spm.id} value={spm.id}>
+                        {spm.payment_methods?.name || "Metode Sekolah"}
+                      </option>
+                    ))}
                   </select>
                 </div>
-              )}
-
-            {error && (
-              <div className="rounded-md border border-danger/20 bg-danger/10 px-4 py-3">
-                <p className="text-sm text-danger">{error}</p>
               </div>
-            )}
 
-            {success && (
-              <div className="rounded-md border border-success/20 bg-success/10 px-4 py-3">
-                <p className="text-sm text-success">Pembayaran berhasil diproses.</p>
+              <div>
+                <label htmlFor="ref_number" className="block text-xs font-bold text-[#555] mb-1">
+                  Nomor Referensi / Kwitansi Manual
+                </label>
+                <input
+                  id="ref_number"
+                  type="text"
+                  value={referenceNumber}
+                  onChange={(e) => setReferenceNumber(e.target.value)}
+                  placeholder="Contoh: KWT-2026-001"
+                  className="w-full px-3.5 py-2.5 bg-[#F5F3EC] border border-[#E5E0D8] rounded-xl text-xs text-[#1A1A1A]"
+                  disabled={isSubmitting}
+                />
               </div>
-            )}
 
-            <button
-              type="submit"
-              disabled={isSubmitting || !paymentMethodId || !schoolPaymentMethodId}
-               className="h-10 px-4 rounded-md bg-primary text-white text-sm font-semibold hover:bg-primary-dark active:scale-[0.98] transition-all focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 inline-flex items-center gap-2 min-h-[44px]"
-            >
-              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              {isSubmitting ? "Menyimpan..." : "Proses Pembayaran"}
-            </button>
-          </form>
-        </Card>
-      )}
-
-      <Card>
-        <h3 className="text-base font-semibold text-foreground mb-4">
-          Riwayat Pembayaran
-        </h3>
-        {payments.length === 0 ? (
-          <EmptyState
-            icon={<Receipt className="h-6 w-6" />}
-            title="Belum ada pembayaran."
-            description="Pembayaran yang dilakukan untuk tagihan ini akan muncul di sini."
-          />
-        ) : (
-          <div className="divide-y divide-border">
-            {payments.map((payment) => (
-              <div key={payment.id} className="flex items-center justify-between py-3">
-                <div>
-                  <Link href={`/dashboard/admin/payments/${payment.id}/receipt`} className="text-sm font-medium text-foreground hover:underline">
-                    {formatCurrency(payment.amount)}
-                  </Link>
-                  <p className="text-xs text-muted">
-                    {payment.payment_methods?.name || "-"} • {formatDate(payment.payment_date)}
-                  </p>
-                  {payment.reference_number && (
-                    <p className="text-xs text-muted">Ref: {payment.reference_number}</p>
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 bg-[#0C3B2E] text-white text-xs font-bold rounded-xl hover:bg-[#10523E] disabled:opacity-50 inline-flex items-center gap-2"
+                >
+                  {isSubmitting && (
+                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
                   )}
-                </div>
-                <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                  payment.status === "completed" ? "bg-success/10 text-success" :
-                  payment.status === "pending" ? "bg-primary/10 text-primary" :
-                  "bg-danger/10 text-danger"
-                }`}>
-                  {payment.status === "completed" ? "Berhasil" : payment.status === "pending" ? "Menunggu" : "Gagal"}
-                </span>
+                  {isSubmitting ? "Memproses..." : "Konfirmasi Pembayaran"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowPaymentModal(false)}
+                  disabled={isSubmitting}
+                  className="px-4 py-2 bg-[#F5F3EC] border border-[#E5E0D8] text-xs font-bold text-[#1A1A1A] rounded-xl"
+                >
+                  Batal
+                </button>
               </div>
-            ))}
+            </form>
           </div>
         )}
-      </Card>
-    </div>
+
+        {/* RIWAYAT PEMBAYARAN */}
+        <div className="bg-white p-5 rounded-[20px] border border-[#E5E0D8] shadow-[0_2px_10px_rgba(0,0,0,0.02)] space-y-4">
+          <h3 className="text-base font-bold text-[#1A1A1A]">Riwayat Transaksi & Kwitansi</h3>
+
+          {payments.length === 0 ? (
+            <p className="text-xs text-[#7A7A7A]">Belum ada riwayat pembayaran untuk tagihan ini.</p>
+          ) : (
+            <div className="space-y-3">
+              {payments.map((p) => (
+                <div
+                  key={p.id}
+                  className="p-4 bg-[#F5F3EC] rounded-2xl border border-[#E5E0D8] flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                >
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-bold text-[#0C3B2E]">
+                        {formatCurrency(p.amount)}
+                      </p>
+                      <span className="px-2 py-0.5 rounded bg-[#0C3B2E]/10 text-[#0C3B2E] text-[10px] font-bold">
+                        {p.status}
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#666] mt-1">
+                      Metode: {p.payment_methods?.name || "-"} | Tgl: {formatDate(p.payment_date)}
+                    </p>
+                    <p className="text-[11px] text-[#8A8A8A]">
+                      Ref: {p.reference_number || "-"}
+                    </p>
+                  </div>
+
+                  <a
+                    href={`/dashboard/admin/payments/receipt/${p.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 bg-white border border-[#E5E0D8] text-[#1A1A1A] text-xs font-bold rounded-xl hover:bg-[#EAE6DC] transition-colors inline-flex items-center gap-1.5 self-start sm:self-center"
+                  >
+                    <Receipt className="h-3.5 w-3.5 text-[#0C3B2E]" />
+                    Kwitansi
+                  </a>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </PageContainer>
   );
 }

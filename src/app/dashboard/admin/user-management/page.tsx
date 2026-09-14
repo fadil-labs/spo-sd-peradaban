@@ -1,15 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { PageContainer } from "@/components/layout/PageContainer";
-import { PageHeader } from "@/components/operational/PageHeader";
-import { Card } from "@/components/ui/card";
+import { useState, useEffect, useCallback } from "react";
+import { Users, Key, UserCheck, UserX, RefreshCw, X } from "lucide-react";
 import { DataTable } from "@/components/operational/data-table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { SearchInput } from "@/components/operational/search-input";
 import { useToast } from "@/components/ui/toast";
 import { getUsersAction, resetUserPasswordAction, toggleUserStatusAction } from "./actions";
-import { RefreshCw, Key, UserCheck, UserX } from "lucide-react";
 
 type User = {
   id: string;
@@ -37,39 +34,32 @@ export default function UserManagementPage() {
   const [page, setPage] = useState(1);
   const [totalRows, setTotalRows] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
-
-  const pageRef = useRef(page);
-  const searchRef = useRef(searchQuery);
-
-  useEffect(() => {
-    pageRef.current = page;
-  }, [page]);
-
-  useEffect(() => {
-    searchRef.current = searchQuery;
-  }, [searchQuery]);
+  const [roleFilter, setRoleFilter] = useState<string>("all");
 
   const toast = useToast();
 
-  const loadUsers = useCallback(async (pageNum?: number) => {
+  const loadUsers = useCallback(async (targetPage: number, query: string, role: string) => {
     setIsLoading(true);
     setError(null);
-    const result = await getUsersAction(pageNum || pageRef.current, 20, searchRef.current || undefined);
-    if ("error" in result) {
+    const result = await getUsersAction(
+      targetPage,
+      20,
+      query.trim() || undefined,
+      role !== "all" ? role : undefined
+    );
+    if ("error" in result && result.error) {
       setError(result.error as string);
-    } else {
+    } else if ("users" in result) {
       setUsers(result.users as User[]);
-      setTotalRows(result.totalRows);
-      if (pageNum) setPage(pageNum);
+      setTotalRows(result.totalRows || 0);
     }
     setIsLoading(false);
   }, []);
 
-  /* eslint-disable react-hooks/set-state-in-effect */
+  // Otomatis memuat data setiap kali halaman, kata kunci pencarian, atau filter role berubah
   useEffect(() => {
-    loadUsers();
-  }, [loadUsers]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+    loadUsers(page, searchQuery, roleFilter);
+  }, [page, searchQuery, roleFilter, loadUsers]);
 
   const handleResetPassword = async (userId: string) => {
     setIsResetting(userId);
@@ -79,7 +69,7 @@ export default function UserManagementPage() {
     } else if (result?.credentials) {
       setCredentialModal(result.credentials);
       toast.addToast("success", "Password berhasil direset.");
-      loadUsers();
+      loadUsers(page, searchQuery, roleFilter);
     }
     setIsResetting(null);
   };
@@ -90,7 +80,7 @@ export default function UserManagementPage() {
       toast.addToast("error", result.error);
     } else {
       toast.addToast("success", currentStatus ? "Pengguna dinonaktifkan." : "Pengguna diaktifkan.");
-      loadUsers();
+      loadUsers(page, searchQuery, roleFilter);
     }
   };
 
@@ -107,38 +97,33 @@ export default function UserManagementPage() {
 
   const getRoleLabel = (role: string) => {
     switch (role) {
-      case "admin":
-        return "Admin";
-      case "bendahara":
-        return "Bendahara";
-      case "orang_tua":
-        return "Orang Tua";
-      default:
-        return role;
+      case "admin": return "Admin";
+      case "bendahara": return "Bendahara";
+      case "orang_tua": return "Orang Tua";
+      default: return role;
     }
   };
 
   const columns = [
     {
       key: "name",
-      header: "Nama",
-      sortable: true,
+      header: "Nama Pengguna",
       render: (item: User) => (
-        <div>
-          <p className="font-medium text-foreground">{item.full_name}</p>
-          {item.username && <p className="text-xs text-muted">@{item.username}</p>}
+        <div className="space-y-0.5">
+          <p className="font-bold text-[#1A1A1A]">{item.full_name}</p>
+          {item.username && <p className="text-xs text-[#7A7A7A]">@{item.username}</p>}
         </div>
       ),
     },
     {
       key: "email",
-      header: "Email",
+      header: "Email / Akun",
       render: (item: User) => {
         const isPlaceholder = item.email?.includes("@placeholder.local");
         return (
-          <span className={isPlaceholder ? "text-warning" : ""}>
+          <span className={`text-xs font-medium ${isPlaceholder ? "text-[#C28E38]" : "text-[#1A1A1A]"}`}>
             {item.email || "-"}
-            {isPlaceholder && <span className="ml-2 text-[10px] text-warning/80">(placeholder)</span>}
+            {isPlaceholder && <span className="ml-1.5 text-[10px] text-[#C28E38]/80 bg-[#C28E38]/10 px-1.5 py-0.5 rounded-md">placeholder</span>}
           </span>
         );
       },
@@ -147,7 +132,7 @@ export default function UserManagementPage() {
       key: "role",
       header: "Role",
       render: (item: User) => (
-        <span className="inline-flex items-center rounded-full border border-border px-2 py-0.5 text-xs font-medium text-muted">
+        <span className="inline-flex items-center rounded-full border border-[#E5E0D8] bg-[#F5F3EC] px-3 py-1 text-xs font-bold text-[#0C3B2E]">
           {getRoleLabel(item.role)}
         </span>
       ),
@@ -156,10 +141,10 @@ export default function UserManagementPage() {
       key: "status",
       header: "Status",
       render: (item: User) => (
-        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+        <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${
           item.is_active
-            ? "border border-success/20 bg-success/10 text-success"
-            : "border border-danger/20 bg-danger/10 text-danger"
+            ? "bg-[#0C3B2E]/10 text-[#0C3B2E]"
+            : "bg-red-500/10 text-red-600"
         }`}>
           {item.is_active ? "Aktif" : "Nonaktif"}
         </span>
@@ -167,12 +152,13 @@ export default function UserManagementPage() {
     },
     {
       key: "password",
-      header: "Password",
+      header: "Keamanan Sandi",
       render: (item: User) => (
-        <span className={`text-xs ${item.must_change_password ? "text-warning" : "text-muted"}`}>
+        <span className={`text-xs font-semibold ${item.must_change_password ? "text-[#C28E38]" : "text-[#7A7A7A]"}`}>
           {item.must_change_password ? "Harus ganti" : "Sudah diubah"}
         </span>
       ),
+      mobileHide: true,
     },
     {
       key: "actions",
@@ -183,19 +169,23 @@ export default function UserManagementPage() {
           <button
             onClick={() => handleResetPassword(item.id)}
             disabled={isResetting === item.id}
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border bg-surface text-xs font-semibold hover:bg-muted/10 transition-colors active:scale-[0.98] min-h-[44px]"
+            className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl border border-[#E5E0D8] bg-white text-xs font-bold text-[#1A1A1A] hover:bg-[#F5F3EC] transition-all active:scale-[0.98] shadow-sm"
           >
             {isResetting === item.id ? (
               <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
             ) : (
-              <Key className="h-3.5 w-3.5" />
+              <Key className="h-3.5 w-3.5 text-[#C28E38]" />
             )}
-            Reset Password
+            Reset
           </button>
           <button
             onClick={() => handleToggleStatus(item.id, item.is_active)}
             disabled={isResetting === item.id}
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border bg-surface text-xs font-semibold hover:bg-muted/10 transition-colors active:scale-[0.98] min-h-[44px]"
+            className={`inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl border text-xs font-bold transition-all active:scale-[0.98] shadow-sm ${
+              item.is_active 
+                ? "border-red-500/20 bg-red-500/5 text-red-600 hover:bg-red-500/10" 
+                : "border-[#0C3B2E]/20 bg-[#0C3B2E]/5 text-[#0C3B2E] hover:bg-[#0C3B2E]/10"
+            }`}
           >
             {item.is_active ? <UserX className="h-3.5 w-3.5" /> : <UserCheck className="h-3.5 w-3.5" />}
             {item.is_active ? "Nonaktifkan" : "Aktifkan"}
@@ -206,67 +196,124 @@ export default function UserManagementPage() {
   ];
 
   return (
-    <PageContainer>
-      <div className="flex flex-col gap-6">
-        <PageHeader
-          title="Manajemen User"
-          description="Kelola akun pengguna di sekolah"
-          primaryAction={{
-            label: "Refresh",
-            onClick: loadUsers,
-            icon: <RefreshCw className="h-4 w-4" />,
-          }}
-        />
-
-        <div className="flex items-center gap-4">
-          <SearchInput
-            value={searchQuery}
-            onChange={(value) => {
-              setSearchQuery(value);
-              setPage(1);
-            }}
-            placeholder="Cari nama, email, atau username..."
-          />
+    <div className="w-full max-w-7xl mx-auto px-6 sm:px-8 lg:px-10 py-6 sm:py-8 space-y-8">
+      {/* HEADER HALAMAN */}
+      <div className="bg-white rounded-[24px] p-7 sm:p-8 border border-[#E5E0D8] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-2">
+          <span className="inline-block px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#0C3B2E]/10 text-[#0C3B2E]">
+            Administrasi Sistem
+          </span>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1A1A1A] tracking-tight">
+            Manajemen User
+          </h1>
+          <p className="text-xs sm:text-sm text-[#7A7A7A] max-w-2xl leading-relaxed">
+            Kelola akun pengguna di sekolah termasuk hak akses orang tua, bendahara, dan administrator dengan aman.
+          </p>
         </div>
 
-        {error && (
-          <div className="rounded-md border border-danger/20 bg-danger/10 px-4 py-3">
-            <p className="text-sm text-danger">{error}</p>
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => loadUsers(page, searchQuery, roleFilter)}
+            className="inline-flex items-center gap-2 h-11 px-5 rounded-xl bg-[#0C3B2E] text-white text-xs font-bold hover:bg-[#10523E] transition-all shadow-sm active:scale-[0.98]"
+          >
+            <RefreshCw className="h-4 w-4" />
+            <span>Refresh Data</span>
+          </button>
+        </div>
+      </div>
 
-        {credentialModal && (
-          <Card>
-            <div className="flex items-start gap-3">
-              <Key className="h-5 w-5 text-primary mt-0.5" />
-              <div className="flex-1">
-                <h3 className="text-sm font-semibold text-foreground">Kredensial Baru</h3>
-                <p className="text-xs text-muted mt-1">Berikut adalah kredensial baru untuk pengguna. Simpan dengan aman.</p>
-                <div className="mt-3 space-y-1 text-xs">
-                  <p><span className="font-medium text-foreground">Email:</span> <span className="text-muted">{credentialModal.email}</span></p>
-                  <p><span className="font-medium text-foreground">Password baru:</span> <span className="text-muted font-mono">{credentialModal.temporaryPassword}</span></p>
-                </div>
-                <div className="mt-3 flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={copyCredentials}
-                    className="inline-flex items-center gap-2 h-9 px-3 rounded-md border border-border bg-surface text-xs font-semibold hover:bg-muted/10 transition-colors min-h-[44px]"
-                  >
-                    Salin Kredensial
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCredentialModal(null)}
-                    className="h-9 px-3 rounded-md bg-primary text-white text-xs font-semibold hover:bg-primary-dark active:scale-[0.98] transition-colors min-h-[44px]"
-                  >
-                    Tutup
-                  </button>
-                </div>
+      {error && (
+        <div className="rounded-[20px] border border-red-500/20 bg-red-500/10 px-5 py-4">
+          <p className="text-sm text-red-600 font-medium">{error}</p>
+        </div>
+      )}
+
+      {/* CREDENTIAL POPUP MODAL */}
+      {credentialModal && (
+        <div className="bg-white p-6 sm:p-7 rounded-[24px] border border-[#C28E38]/40 shadow-lg space-y-4">
+          <div className="flex items-start gap-4">
+            <div className="p-3 rounded-2xl bg-[#C28E38]/15 text-[#C28E38]">
+              <Key className="h-6 w-6" />
+            </div>
+            <div className="flex-1 space-y-1">
+              <h3 className="text-base font-extrabold text-[#1A1A1A]">Kredensial Password Baru Berhasil Dibuat</h3>
+              <p className="text-xs sm:text-sm text-[#7A7A7A]">Simpan informasi sandi sementara ini sebelum dibagikan kepada pengguna.</p>
+              
+              <div className="mt-4 p-4 rounded-2xl bg-[#F5F3EC] border border-[#E5E0D8] space-y-2 text-xs sm:text-sm">
+                <p><span className="font-bold text-[#1A1A1A]">Email:</span> <span className="text-[#7A7A7A]">{credentialModal.email}</span></p>
+                <p><span className="font-bold text-[#1A1A1A]">Password Sementara:</span> <span className="font-mono font-bold text-[#0C3B2E] bg-white px-2.5 py-1 rounded-md border border-[#E5E0D8]">{credentialModal.temporaryPassword}</span></p>
+              </div>
+
+              <div className="mt-4 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={copyCredentials}
+                  className="inline-flex items-center gap-2 h-11 px-5 rounded-xl bg-[#0C3B2E] text-white text-xs font-bold hover:bg-[#10523E] transition-all shadow-sm"
+                >
+                  Salin Kredensial
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCredentialModal(null)}
+                  className="inline-flex items-center gap-2 h-11 px-5 rounded-xl border border-[#E5E0D8] bg-white text-xs font-bold text-[#1A1A1A] hover:bg-[#F5F3EC] transition-all"
+                >
+                  Tutup
+                </button>
               </div>
             </div>
-          </Card>
-        )}
+          </div>
+        </div>
+      )}
 
+      {/* FILTER CONTROLS BAR */}
+      <div className="bg-white p-5 rounded-[24px] border border-[#E5E0D8] shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3 flex-wrap flex-1">
+          <div className="flex-1 min-w-[240px]">
+            <SearchInput
+              value={searchQuery}
+              onChange={(value) => {
+                setSearchQuery(value);
+                setPage(1); // Reset ke halaman 1 saat mencari
+              }}
+              placeholder="Cari nama, email, atau username..."
+            />
+          </div>
+
+          <select
+            value={roleFilter}
+            onChange={(e) => {
+              setRoleFilter(e.target.value);
+              setPage(1); // Reset ke halaman 1 saat filter role berubah
+            }}
+            aria-label="Filter Berdasarkan Role"
+            className="h-11 px-4 rounded-xl border border-[#E5E0D8] bg-[#F5F3EC] text-sm font-bold text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#0C3B2E] transition-all"
+          >
+            <option value="all">Semua Role</option>
+            <option value="orang_tua">Orang Tua</option>
+            <option value="bendahara">Bendahara</option>
+            <option value="admin">Admin</option>
+          </select>
+
+          {(searchQuery || roleFilter !== "all") && (
+            <button
+              type="button"
+              onClick={() => { setSearchQuery(""); setRoleFilter("all"); setPage(1); }}
+              className="inline-flex items-center gap-1.5 h-11 px-4 rounded-xl border border-[#E5E0D8] bg-white text-xs font-bold text-[#7A7A7A] hover:text-[#1A1A1A] hover:bg-[#F5F3EC] transition-all"
+            >
+              <X className="h-4 w-4" />
+              Reset
+            </button>
+          )}
+        </div>
+
+        <p className="text-xs font-semibold text-[#7A7A7A] text-right sm:text-left self-center">
+          Total {totalRows} Pengguna
+        </p>
+      </div>
+
+      {/* TABEL DATA UTAMA */}
+      <div className="bg-white rounded-[24px] border border-[#E5E0D8] shadow-sm overflow-hidden p-2 sm:p-4">
         {isLoading ? (
           <TableSkeleton rows={10} columns={6} />
         ) : (
@@ -275,42 +322,39 @@ export default function UserManagementPage() {
             data={users}
             keyExtractor={(item) => item.id}
             emptyTitle="Belum ada pengguna"
-            emptyDescription="Pengguna akan muncul setelah dibuat."
-            emptyIcon={
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.5 4.5 0 00-7.536-7.536 9.337 9.337 0 00-.952 4.121A9.37 9.37 0 0112 3.75a9.37 9.37 0 01.75 3.128m-6.75 5.128a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zm13.5 0a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
-              </svg>
-            }
+            emptyDescription="Pengguna sistem akan muncul setelah terdaftar."
+            emptyIcon={<Users className="h-6 w-6 text-[#0C3B2E]" />}
           />
         )}
-
-        {totalRows > 20 && !isLoading && (
-          <div className="flex items-center justify-between">
-            <div className="text-xs text-muted">
-              Menampilkan {(page - 1) * 20 + 1} - {Math.min(page * 20, totalRows)} dari {totalRows} data
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="h-8 px-3 rounded-md border border-border bg-surface text-xs font-semibold hover:bg-muted/10 transition-colors disabled:opacity-50"
-              >
-                Sebelumnya
-              </button>
-              <span className="text-xs text-muted">Halaman {page} dari {Math.max(1, Math.ceil(totalRows / 20))}</span>
-              <button
-                type="button"
-                onClick={() => setPage((p) => p + 1)}
-                disabled={page >= Math.ceil(totalRows / 20)}
-                className="h-8 px-3 rounded-md border border-border bg-surface text-xs font-semibold hover:bg-muted/10 transition-colors disabled:opacity-50"
-              >
-                Selanjutnya
-              </button>
-            </div>
-          </div>
-        )}
       </div>
-    </PageContainer>
+
+      {/* PAGINATION */}
+      {totalRows > 20 && !isLoading && (
+        <div className="flex flex-col sm:flex-row items-center justify-between bg-white p-5 rounded-[24px] border border-[#E5E0D8] shadow-sm gap-4">
+          <div className="text-xs font-semibold text-[#7A7A7A]">
+            Menampilkan {(page - 1) * 20 + 1} - {Math.min(page * 20, totalRows)} dari {totalRows} data
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="h-10 px-4 rounded-xl border border-[#E5E0D8] bg-[#F5F3EC] text-xs font-bold text-[#1A1A1A] hover:bg-[#EAE6DC] transition-all disabled:opacity-50"
+            >
+              Sebelumnya
+            </button>
+            <span className="text-xs font-bold text-[#7A7A7A] px-2">Halaman {page} dari {Math.max(1, Math.ceil(totalRows / 20))}</span>
+            <button
+              type="button"
+              onClick={() => setPage((p) => p + 1)}
+              disabled={page >= Math.ceil(totalRows / 20)}
+              className="h-10 px-4 rounded-xl border border-[#E5E0D8] bg-[#F5F3EC] text-xs font-bold text-[#1A1A1A] hover:bg-[#EAE6DC] transition-all disabled:opacity-50"
+            >
+              Selanjutnya
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
