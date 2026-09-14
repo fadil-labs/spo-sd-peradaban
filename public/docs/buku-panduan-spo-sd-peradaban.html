@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buku Panduan Aplikasi SPO SD Peradaban</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+    background: #f5f5f5;
+  }
+  .page {
+    background: white;
+    padding: 40px 50px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
+  h2 { color: #2980b9; margin-top: 30px; border-bottom: 2px solid #bdc3c7; padding-bottom: 8px; }
+  h3 { color: #34495e; margin-top: 25px; }
+  h4 { color: #555; margin-top: 20px; }
+  .cover {
+    text-align: center;
+    padding: 60px 40px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 10px;
+  }
+  .cover h1 { color: white; border-bottom: none; font-size: 2.5em; }
+  .cover p { font-size: 1.2em; opacity: 0.95; }
+  .toc { background: #ecf0f1; padding: 20px 30px; border-radius: 6px; }
+  .toc ul { list-style: none; padding-left: 0; }
+  .toc li { margin: 8px 0; }
+  .toc a { color: #2980b9; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+  th, td { border: 1px solid #ddd; padding: 10px 12px; text-align: left; }
+  th { background: #3498db; color: white; }
+  tr:nth-child(even) { background: #f9f9f9; }
+  .note { background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px 16px; margin: 15px 0; border-radius: 4px; }
+  .warning { background: #f8d7da; border-left: 4px solid #dc3545; padding: 12px 16px; margin: 15px 0; border-radius: 4px; }
+  .info { background: #d1ecf1; border-left: 4px solid #17a2b8; padding: 12px 16px; margin: 15px 0; border-radius: 4px; }
+  .step { background: #e8f4f8; padding: 12px 16px; margin: 10px 0; border-radius: 6px; border-left: 4px solid #17a2b8; }
+  .step-number { display: inline-block; background: #17a2b8; color: white; width: 24px; height: 24px; border-radius: 50%; text-align: center; line-height: 24px; margin-right: 8px; font-weight: bold; }
+  .screenshot { background: #f4f4f4; border: 2px dashed #ccc; padding: 30px; text-align: center; border-radius: 6px; margin: 15px 0; color: #666; font-style: italic; }
+  .role-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.85em;
+    font-weight: bold;
+    margin-left: 8px;
+  }
+  .role-admin { background: #d4edda; color: #155724; }
+  .role-bendahara { background: #d1ecf1; color: #0c5460; }
+  .role-orangtua { background: #fff3cd; color: #856404; }
+  @media print {
+    body { background: white; padding: 0; }
+    .page { box-shadow: none; margin-bottom: 0; page-break-after: always; }
+    .no-print { display: none; }
+  }
+  .page-break { page-break-after: always; }
+</style>
+</head>
+<body>
+
+<!-- HALAMAN SAMPUL -->
+<div class="page cover">
+  <h1>📚 Buku Panduan</h1>
+  <h1 style="font-size: 2em; margin-top: 10px;">Aplikasi SPO SD Peradaban</h1>
+  <p style="margin-top: 30px; font-size: 1.1em;">Sistem Pembayaran Online<br>Sekolah Dasar Peradaban</p>
+  <p style="margin-top: 50px; font-size: 0.95em;">Versi 1.0 - 2026</p>
+</div>
+
+<!-- DAFTAR ISI -->
+<div class="page">
+  <h1>📋 Daftar Isi</h1>
+  <div class="toc">
+    <ul>
+      <li><strong>1. Pendahuluan</strong></li>
+      <ul>
+        <li>Apa itu SPO SD Peradaban?</li>
+        <li>Fitur Utama</li>
+        <li>Manfaat Penggunaan</li>
+      </ul>
+      <li><strong>2. Memulai</strong></li>
+      <ul>
+        <li>Mengakses Aplikasi</li>
+        <li>Login ke Sistem</li>
+        <li>Reset Password</li>
+      </ul>
+      <li><strong>3. Dashboard Admin</strong></li>
+      <ul>
+        <li>Ringkasan Dashboard</li>
+        <li>Manajemen Siswa</li>
+        <li>Manajemen Tagihan</li>
+        <li>Verifikasi Bukti Pembayaran</li>
+        <li>Laporan Keuangan</li>
+      </ul>
+      <li><strong>4. Dashboard Bendahara</strong></li>
+      <ul>
+        <li>Ringkasan Dashboard</li>
+        <li>Pembayaran Manual</li>
+        <li>Verifikasi Bukti Pembayaran</li>
+      </ul>
+      <li><strong>5. Dashboard Orang Tua</strong></li>
+      <ul>
+        <li>Ringkasan Dashboard</li>
+        <li>Membuat Pembayaran</li>
+        <li>Mengunggah Bukti Pembayaran</li>
+        <li>Melihat Riwayat Pembayaran</li>
+        <li>Mengunduh Kuitansi</li>
+      </ul>
+      <li><strong>6. Metode Pembayaran</strong></li>
+      <li><strong>7. Cicilan Tagihan</strong></li>
+      <li><strong>8. Troubleshooting</strong></li>
+      <li><strong>9. FAQ</strong></li>
+    </ul>
+  </div>
+</div>
+
+<!-- BAB 1: PENDAHULUAN -->
+<div class="page">
+  <h1>Bab 1 - Pendahuluan</h1>
+
+  <h2>1.1 Apa itu SPO SD Peradaban?</h2>
+  <p>SPO SD Peradaban adalah <strong>Sistem Pembayaran Online</strong> untuk Sekolah Dasar Peradaban. Aplikasi ini memudahkan pengelolaan pembayaran sekolah, mulai dari pembuatan tagihan, penerimaan pembayaran, verifikasi bukti pembayaran, hingga pelaporan keuangan.</p>
+
+  <h2>1.2 Fitur Utama</h2>
+  <table>
+    <tr><th>Fitur</th><th>Keterangan</th></tr>
+    <tr><td>Manajemen Tagihan</td><td>Membuat dan mengelola tagihan siswa</td></tr>
+    <tr><td>Pembayaran Online</td><td>Pembayaran melalui berbagai metode</td></tr>
+    <tr><td>Bukti Pembayaran</td><td>Upload dan verifikasi bukti transfer</td></tr>
+    <tr><td>Cicilan Tagihan</td><td>Pembayaran bertahap dengan tracking cicilan</td></tr>
+    <tr><td>Laporan Keuangan</td><td>Laporan otomatis untuk admin dan bendahara</td></tr>
+    <tr><td>Notifikasi</td><td>Notifikasi real-time untuk semua pengguna</td></tr>
+    <tr><td>Audit Trail</td><td>Pencatatan semua aktivitas keuangan</td></tr>
+  </table>
+
+  <h2>1.3 Manfaat Penggunaan</h2>
+  <ul>
+    <li><strong>Admin:</strong> Kelola seluruh operasi pembayaran sekolah</li>
+    <li><strong>Bendahara:</strong> Proses dan verifikasi pembayaran dengan mudah</li>
+    <li><strong>Orang Tua:</strong> Bayar tagihan sekolah secara online kapan saja</li>
+  </ul>
+
+  <h2>1.4 Peran Pengguna</h2>
+  <table>
+    <tr><th>Peran</th><th>Hak Akses</th></tr>
+    <tr><td><span class="role-badge role-admin">Admin</span></td><td>Kelola seluruh sistem, siswa, tagihan, laporan</td></tr>
+    <tr><td><span class="role-badge role-bendahara">Bendahara</span></td><td>Verifikasi pembayaran, kelola metode pembayaran</td></tr>
+    <tr><td><span class="role-badge role-orangtua">Orang Tua</span></td><td>Bayar tagihan, upload bukti, lihat riwayat</td></tr>
+  </table>
+</div>
+
+<!-- BAB 2: MEMULAI -->
+<div class="page">
+  <h1>Bab 2 - Memulai</h1>
+
+  <h2>2.1 Mengakses Aplikasi</h2>
+  <p>Buka browser dan akses alamat:</p>
+  <div class="info">
+    <strong>URL:</strong> https://spo.krakataumedia.com<br>
+    <strong>Browser yang Didukung:</strong> Chrome, Firefox, Edge, Safari (versi terbaru)
+  </div>
+
+  <h2>2.2 Login ke Sistem</h2>
+  <div class="step">
+    <span class="step-number">1</span> Buka aplikasi di browser
+  </div>
+  <div class="step">
+    <span class="step-number">2</span> Masukkan email dan password yang diberikan oleh admin
+  </div>
+  <div class="step">
+    <span class="step-number">3</span> Klik tombol <strong>"Masuk"</strong>
+  </div>
+  <div class="step">
+    <span class="step-number">4</span> Anda akan diarahkan ke dashboard sesuai peran Anda
+  </div>
+
+  <div class="screenshot">
+    [Tampilan halaman login dengan form email dan password]
+  </div>
+
+  <h2>2.3 Reset Password</h2>
+  <p>Jika lupa password:</p>
+  <ol>
+    <li>Klik link <strong>"Lupa Password?"</strong> di halaman login</li>
+    <li>Masukkan email yang terdaftar</li>
+    <li>Cek email untuk link reset password</li>
+    <li>Ikuti instruksi di email untuk membuat password baru</li>
+  </ol>
+
+  <div class="warning">
+    <strong>Penting:</strong> Hubungi admin sekolah jika tidak menerima email reset password.
+  </div>
+
+  <h2>2.4 Logout</h2>
+  <p>Untuk keluar dari sistem:</p>
+  <ol>
+    <li>Klik menu profil di pojok kanan atas</li>
+    <li>Pilih <strong>"Keluar"</strong></li>
+    <li>Anda akan diarahkan kembali ke halaman login</li>
+  </ol>
+</div>
+
+<!-- BAB 3: DASHBOARD ADMIN -->
+<div class="page">
+  <h1>Bab 3 - Dashboard Admin</h1>
+  <p><span class="role-badge role-admin">Hanya untuk Admin</span></p>
+
+  <h2>3.1 Ringkasan Dashboard</h2>
+  <p>Setelah login sebagai Admin, Anda akan melihat dashboard dengan informasi:</p>
+  <ul>
+    <li>Total siswa aktif</li>
+    <li>Total tagihan bulan ini</li>
+    <li>Pembayaran yang berhasil</li>
+    <li>Pembayaran yang menunggu verifikasi</li>
+  </ul>
+
+  <div class="screenshot">
+    [Tampilan dashboard admin dengan kartu statistik]
+  </div>
+
+  <h2>3.2 Manajemen Siswa</h2>
+  <h3>Tambah Siswa Baru</h3>
+  <div class="step">
+    <span class="step-number">1</span> Klik menu <strong>"Siswa"</strong> di sidebar
+  </div>
+  <div class="step">
+    <span class="step-number">2</span> Klik tombol <strong>"Tambah Siswa"</strong>
+  </div>
+  <div class="step">
+    <span class="step-number">3</span> Isi form data siswa:
+    <ul>
+      <li>NIS (Nomor Induk Siswa)</li>
+      <li>Nama lengkap</li>
+      <li>Tanggal lahir</li>
+      <li>Alamat</li>
+      <li>Status (aktif/non-aktif)</li>
+    </ul>
+  </div>
+  <div class="step">
+    <span class="step-number">4</span> Klik <strong>"Simpan"</strong>
+  </div>
+
+  <h3>Edit Data Siswa</h3>
+  <ol>
+    <li>Buka menu <strong>"Siswa"</strong></li>
+    <li>Cari siswa yang ingin diedit</li>
+    <li>Klik ikon <strong>edit</strong> pada baris siswa</li>
+    <li>Ubah data yang diperlukan</li>
+    <li>Klik <strong>"Simpan Perubahan"</strong></li>
+  </ol>
+
+  <h3>Hapus Siswa</h3>
+  <div class="warning">
+    <strong>Peringatan:</strong> Siswa yang sudah memiliki transaksi pembayaran tidak dapat dihapus. Gunakan opsi "Non-aktifkan" sebagai gantinya.
+  </div>
+
+  <h2>3.3 Manajemen Tagihan</h2>
+  <h3>Membuat Tagihan Baru</h3>
+  <div class="step">
+    <span class="step-number">1</span> Klik menu <strong>"Tagihan Siswa"</strong>
+  </div>
+  <div class="step">
+    <span class="step-number">2</span> Klik <strong>"Buat Tagihan"</strong>
+  </div>
+  <div class="step">
+    <span class="step-number">3</span> Pilih siswa dari dropdown
+  </div>
+  <div class="step">
+    <span class="step-number">4</span> Pilih kategori pembayaran (SPP, Daftar Ulang, dll)
+  </div>
+  <div class="step">
+    <span class="step-number">5</span> Masukkan jumlah tagihan
+  </div>
+  <div class="step">
+    <span class="step-number">6</span> Atur tanggal jatuh tempo
+  </div>
+  <div class="step">
+    <span class="step-number">7</span> Klik <strong>"Buat Tagihan"</strong>
+  </div>
+
+  <h3>Mengatur Cicilan Tagihan</h3>
+  <ol>
+    <li>Buka detail tagihan siswa</li>
+    <li>Klik tab <strong>"Cicilan"</strong></li>
+    <li>Atur jumlah cicilan (misal: 3x)</li>
+    <li>Tentukan tanggal jatuh tempo setiap cicilan</li>
+    <li>Klik <strong>"Simpan Rencana Cicilan"</strong></li>
+  </ol>
+
+  <h2>3.4 Verifikasi Bukti Pembayaran</h2>
+  <div class="step">
+    <span class="step-number">1</span> Klik menu <strong>"Bukti Pembayaran"</strong>
+  </div>
+  <div class="step">
+    <span class="step-number">2</span> Lihat daftar bukti yang menunggu verifikasi
+  </div>
+  <div class="step">
+    <span class="step-number">3</span> Klik <strong>"Detail"</strong> untuk melihat bukti
+  </div>
+  <div class="step">
+    <span class="step-number">4</span> Periksa bukti pembayaran:
+    <ul>
+      <li>Apakah nominal sesuai tagihan?</li>
+      <li>Apakah tanggal transfer sesuai?</li>
+      <li>Apakah bukti jelas dan terbaca?</li>
+    </ul>
+  </div>
+  <div class="step">
+    <span class="step-number">5</span> Klik <strong>"Setuju"</strong> atau <strong>"Tolak"</strong>
+  </div>
+  <div class="step">
+    <span class="step-number">6</span> Jika menolak, isi alasan penolakan
+  </div>
+
+  <div class="info">
+    <strong>Info:</strong> Setiap verifikasi dicatat dalam audit trail untuk keamanan.
+  </div>
+
+  <h2>3.5 Laporan Keuangan</h2>
+  <ol>
+    <li>Klik menu <strong>"Laporan Keuangan"</strong></li>
+    <li>Pilih periode laporan (bulan/tahun)</li>
+    <li>Lihat ringkasan:
+      <ul>
+        <li>Total pembayaran masuk</li>
+        <li>Pembayaran per metode</li>
+        <li>Tagihan belum dibayar</li>
+      </ul>
+    </li>
+    <li>Klik <strong>"Export"</strong> untuk mengunduh laporan Excel/PDF</li>
+  </ol>
+
+  <h2>3.6 Audit Log</h2>
+  <p>Admin dapat melihat semua aktivitas sistem:</p>
+  <ol>
+    <li>Klik menu <strong>"Audit Log"</strong></li>
+    <li>Filter berdasarkan:
+      <ul>
+        <li>Tanggal</li>
+        <li>Jenis aksi</li>
+        <li>Pengguna yang melakukan aksi</li>
+      </ul>
+    </li>
+    <li>Lihat detail setiap aktivitas</li>
+  </ol>
+</div>
+
+<!-- BAB 4: DASHBOARD BENDAHARA -->
+<div class="page">
+  <h1>Bab 4 - Dashboard Bendahara</h1>
+  <p><span class="role-badge role-bendahara">Hanya untuk Bendahara</span></p>
+
+  <h2>4.1 Ringkasan Dashboard</h2>
+  <p>Dashboard bendahara menampilkan:</p>
+  <ul>
+    <li>Pembayaran yang menunggu verifikasi</li>
+    <li>Total pembayaran hari ini</li>
+    <li>Total pembayaran bulan ini</li>
+    <li>Metode pembayaran yang aktif</li>
+  </ul>
+
+  <h2>4.2 Verifikasi Bukti Pembayaran</h2>
+  <p>Fitur utama bendahara adalah memverifikasi bukti pembayaran yang diupload oleh orang tua:</p>
+
+  <div class="step">
+    <span class="step-number">1</span> Buka menu <strong>"Bukti Pembayaran"</strong>
+  </div>
+  <div class="step">
+    <span class="step-number">2</span> Lihat daftar bukti dengan status <strong>"Menunggu Verifikasi"</strong>
+  </div>
+  <div class="step">
+    <span class="step-number">3</span> Klik <strong>"Lihat Bukti"</strong> untuk memperbesar gambar
+  </div>
+  <div class="step">
+    <span class="step-number">4</span> Periksa kelengkapan bukti:
+    <ul>
+      <li>Nama pengirim sesuai dengan orang tua siswa?</li>
+      <li>Nominal transfer sesuai tagihan?</li>
+      <li>Tanggal transfer jelas?</li>
+      <li>Bukti tidak di-edit atau dimanipulasi?</li>
+    </ul>
+  </div>
+  <div class="step">
+    <span class="step-number">5</span> Jika bukti valid, klik <strong>"Setuju"</strong>
+  </div>
+  <div class="step">
+    <span class="step-number">6</span> Jika bukti tidak valid, klik <strong>"Tolak"</strong> dan isi alasan penolakan
+  </div>
+
+  <div class="note">
+    <strong>Catatan:</strong> Setelah disetujui, status pembayaran otomatis berubah menjadi "Berhasil" dan orang tua akan menerima notifikasi.
+  </div>
+
+  <h2>4.3 Pembayaran Manual</h2>
+  <p>Untuk pembayaran tunai/transfer langsung:</p>
+  <ol>
+    <li>Klik menu <strong>"Pembayaran"</strong></li>
+    <li>Klik <strong>"Input Pembayaran Manual"</strong></li>
+    <li>Pilih siswa dan tagihan</li>
+    <li>Masukkan jumlah pembayaran</li>
+    <li>Pilih metode pembayaran</li>
+    <li>Klik <strong>"Simpan"</strong></li>
+  </ol>
+
+  <h2>4.4 Manajemen Metode Pembayaran</h2>
+  <ol>
+    <li>Klik menu <strong>"Metode Pembayaran"</strong></li>
+    <li>Aktifkan/nonaktifkan metode pembayaran yang tersedia</li>
+    <li>Klik <strong>"Simpan"</strong></li>
+  </ol>
+</div>
+
+<!-- BAB 5: DASHBOARD ORANG TUA -->
+<div class="page">
+  <h1>Bab 5 - Dashboard Orang Tua</h1>
+  <p><span class="role-badge role-orangtua">Hanya untuk Orang Tua</span></p>
+
+  <h2>5.1 Ringkasan Dashboard</h2>
+  <p>Setelah login, orang tua akan melihat:</p>
+  <ul>
+    <li>Daftar anak yang terdaftar</li>
+    <li>Tagihan aktif yang perlu dibayar</li>
+    <li>Status pembayaran terakhir</li>
+    <li>Notifikasi penting</li>
+  </ul>
+
+  <div class="screenshot">
+    [Tampilan dashboard orang tua dengan daftar tagihan]
+  </div>
+
+  <h2>5.2 Melihat Tagihan</h2>
+  <div class="step">
+    <span class="step-number">1</span> Klik menu <strong>"Tagihan"</strong> di sidebar
+  </div>
+  <div class="step">
+    <span class="step-number">2</span> Lihat daftar tagihan untuk setiap anak
+  </div>
+  <div class="step">
+    <span class="step-number">3</span> Klik tagihan untuk melihat detail:
+    <ul>
+      <li>Jumlah tagihan</li>
+      <li>Tanggal jatuh tempo</li>
+      <li>Status pembayaran</li>
+      <li>Riwayat pembayaran</li>
+    </ul>
+  </div>
+
+  <h2>5.3 Membuat Pembayaran</h2>
+  <h3>Pembayaran QRIS</h3>
+  <div class="step">
+    <span class="step-number">1</span> Buka detail tagihan yang ingin dibayar
+  </div>
+  <div class="step">
+    <span class="step-number">2</span> Klik <strong>"Bayar Sekarang"</strong>
+  </div>
+  <div class="step">
+    <span class="step-number">3</span> Pilih metode pembayaran <strong>QRIS</strong>
+  </div>
+  <div class="step">
+    <span class="step-number">4</span> Masukkan jumlah yang ingin dibayar
+  </div>
+  <div class="step">
+    <span class="step-number">5</span> Klik <strong>"Buat Pembayaran"</strong>
+  </div>
+  <div class="step">
+    <span class="step-number">6</span> Scan QR code yang muncul dengan aplikasi pembayaran
+  </div>
+  <div class="step">
+    <span class="step-number">7</span> Selesaikan pembayaran di aplikasi Anda
+  </div>
+
+  <h3>Pembayaran Transfer Bank</h3>
+  <ol>
+    <li>Pilih metode <strong>"Transfer Bank"</strong></li>
+    <li>Transfer ke nomor rekening yang ditampilkan</li>
+    <li>Simpan bukti transfer (screenshot/foto)</li>
+    <li>Upload bukti transfer ke sistem</li>
+    <li>Tunggu verifikasi dari admin/bendahara</li>
+  </ol>
+
+  <h3>Pembayaran Cicilan</h3>
+  <p>Jika tagihan memiliki rencana cicilan:</p>
+  <ol>
+    <li>Lihat bagian "Rencana Cicilan" di detail tagihan</li>
+    <li>Lihat cicilan keberapa yang harus dibayar</li>
+    <li>Bayar jumlah sesuai dengan cicilan tersebut</li>
+    <li>Ulangi sampai semua cicilan lunas</li>
+  </ol>
+
+  <div class="note">
+    <strong>Tips:</strong> Anda bisa melihat progres cicilan di halaman detail tagihan. Cicilan yang sudah dibayar akan ditandai "Lunas".
+  </div>
+
+  <h2>5.4 Mengunggah Bukti Pembayaran</h2>
+  <p>Untuk pembayaran transfer bank atau manual:</p>
+  <div class="step">
+    <span class="step-number">1</span> Setelah transfer, kembali ke halaman tagihan
+  </div>
+  <div class="step">
+    <span class="step-number">2</span> Klik <strong>"Unggah Bukti Pembayaran"</strong>
+  </div>
+  <div class="step">
+    <span class="step-number">3</span> Pilih file bukti transfer (format JPG, PNG, PDF)
+  </div>
+  <div class="step">
+    <span class="step-number">4</span> Klik <strong>"Upload"</strong>
+  </div>
+  <div class="step">
+    <span class="step-number">5</span> Tunggu verifikasi dari admin/bendahara (1x24 jam)
+  </div>
+
+  <div class="info">
+    <strong>Persyaratan bukti pembayaran:</strong>
+    <ul>
+      <li>Foto/screenshot transfer yang jelas</li>
+      <li>Nama pengirim harus sesuai dengan nama orang tua</li>
+      <li>Tanggal transfer terlihat jelas</li>
+      <li>Nominal transfer sesuai tagihan</li>
+    </ul>
+  </div>
+
+  <h2>5.5 Melihat Riwayat Pembayaran</h2>
+  <ol>
+    <li>Klik menu <strong>"Pembayaran"</strong></li>
+    <li>Lihat daftar semua pembayaran yang pernah dilakukan</li>
+    <li>Setiap pembayaran menampilkan:
+      <ul>
+        <li>Tanggal pembayaran</li>
+        <li>Metode pembayaran</li>
+        <li>Jumlah</li>
+        <li>Status (Berhasil/Gagal/Menunggu)</li>
+      </ul>
+    </li>
+  </ol>
+
+  <h2>5.6 Mengunduh Kuitansi</h2>
+  <div class="step">
+    <span class="step-number">1</span> Buka menu <strong>"Pembayaran"</strong>
+  </div>
+  <div class="step">
+    <span class="step-number">2</span> Cari pembayaran yang sudah berhasil
+  </div>
+  <div class="step">
+    <span class="step-number">3</span> Klik ikon <strong>"Cetak/Download"</strong>
+  </div>
+  <div class="step">
+    <span class="step-number">4</span> Kuitansi akan terbuka di tab baru untuk dicetak atau disimpan sebagai PDF
+  </div>
+
+  <div class="screenshot">
+    [Tampilan kuitansi pembayaran dengan logo sekolah]
+  </div>
+</div>
+
+<!-- BAB 6: METODE PEMBAYARAN -->
+<div class="page">
+  <h1>Bab 6 - Metode Pembayaran</h1>
+
+  <h2>6.1 Jenis Metode Pembayaran</h2>
+  <table>
+    <tr><th>Metode</th><th>Deskripsi</th><th>Proses Verifikasi</th></tr>
+    <tr>
+      <td><strong>QRIS</strong></td>
+      <td>Pembayaran scan QR code</td>
+      <td>Otomatis (real-time)</td>
+    </tr>
+    <tr>
+      <td><strong>Transfer Bank</strong></td>
+      <td>Transfer ke rekening sekolah</td>
+      <td>Manual (admin/bendahara)</td>
+    </tr>
+    <tr>
+      <td><strong>Virtual Account</strong></td>
+      <td>Pembayaran via VA</td>
+      <td>Otomatis (real-time)</td>
+    </tr>
+    <tr>
+      <td><strong>Cash</strong></td>
+      <td>Pembayaran tunai di sekolah</td>
+      <td>Manual (admin/bendahara)</td>
+    </tr>
+  </table>
+
+  <h2>6.2 Proses Pembayaran QRIS</h2>
+  <div class="step">
+    <span class="step-number">1</span> Pilih tagihan yang ingin dibayar
+  </div>
+  <div class="step">
+    <span class="step-number">2</span> Klik <strong>"Bayar dengan QRIS"</strong>
+  </div>
+  <div class="step">
+    <span class="step-number">3</span> Scan QR code dengan aplikasi pembayaran (GoPay, OVO, DANA, dll)
+  </div>
+  <div class="step">
+    <span class="step-number">4</span> Masukkan PIN atau konfirmasi pembayaran
+  </div>
+  <div class="step">
+    <span class="step-number">5</span> Tunggu konfirmasi (beberapa detik)
+  </div>
+  <div class="step">
+    <span class="step-number">6</span> Status pembayaran otomatis berubah menjadi "Berhasil"
+  </div>
+
+  <h2>6.3 Proses Pembayaran Transfer Bank</h2>
+  <div class="step">
+    <span class="step-number">1</span> Pilih tagihan yang ingin dibayar
+  </div>
+  <div class="step">
+    <span class="step-number">2</span> Pilih metode <strong>"Transfer Bank"</strong>
+  </div>
+  <div class="step">
+    <span class="step-number">3</span> Transfer ke nomor rekening yang ditampilkan
+  </div>
+  <div class="step">
+    <span class="step-number">4</span> Simpan bukti transfer (screenshot atau foto)
+  </div>
+  <div class="step">
+    <span class="step-number">5</span> Upload bukti transfer di aplikasi
+  </div>
+  <div class="step">
+    <span class="step-number">6</span> Tunggu verifikasi admin/bendahara (maksimal 1x24 jam)</div>
+  </div>
+  <div class="step">
+    <span class="step-number">7</span> Anda akan menerima notifikasi ketika pembayaran diverifikasi
+  </div>
+
+  <div class="warning">
+    <strong>Penting:</strong> Pastikan nominal transfer sesuai dengan tagihan. Jika ada kekurangan atau kelebihan, verifikasi mungkin ditolak.
+  </div>
+</div>
+
+<!-- BAB 7: CICILAN TAGIHAN -->
+<div class="page">
+  <h1>Bab 7 - Cicilan Tagihan</h1>
+
+  <h2>7.1 Apa itu Cicilan Tagihan?</h2>
+  <p>Cicilan tagihan memungkinkan orang tua membayar tagihan sekolah secara bertahap dalam beberapa kali pembayaran, bukan sekaligus.</p>
+
+  <h2>7.2 Mengaktifkan Cicilan (Admin)</h2>
+  <div class="step">
+    <span class="step-number">1</span> Buka detail tagihan siswa
+  </div>
+  <div class="step">
+    <span class="step-number">2</span> Klik tab <strong>"Cicilan"</strong>
+  </div>
+  <div class="step">
+    <span class="step-number">3</span> Atur jumlah cicilan (misal: 3x atau 4x)
+  </div>
+  <div class="step">
+    <span class="step-number">4</span> Tentukan tanggal jatuh tempo setiap cicilan
+  </div>
+  <div class="step">
+    <span class="step-number">5</span> Klik <strong>"Simpan Rencana Cicilan"</strong>
+  </div>
+
+  <h2>7.3 Melihat Progres Cicilan (Orang Tua)</h2>
+  <div class="step">
+    <span class="step-number">1</span> Buka detail tagihan
+  </div>
+  <div class="step">
+    <span class="step-number">2</span> Lihat bagian <strong>"Rencana Cicilan"</strong>
+  </div>
+  <div class="step">
+    <span class="step-number">3</span> Anda akan melihat:
+    <ul>
+      <li>Total cicilan yang harus dibayar</li>
+      <li>Cicilan keberapa yang aktif</li>
+      <li>Cicilan mana yang sudah lunas</li>
+      <li>Sisa tagihan yang belum dibayar</li>
+    </ul>
+  </div>
+
+  <h2>7.4 Membayar Cicilan</h2>
+  <ol>
+    <li>Buka detail tagihan</li>
+    <li>Lihat cicilan yang aktif (ditandai dengan warna berbeda)</li>
+    <li>Klik <strong>"Bayar Cicilan"</strong></li>
+    <li>Pilih metode pembayaran</li>
+    <li>Selesaikan pembayaran</li>
+    <li>Cicilan akan otomatis ditandai "Lunas"</li>
+  </ol>
+
+  <div class="info">
+    <strong>Info:</strong> Sistem akan otomatis menghitung jumlah cicilan berdasarkan total tagihan dibagi jumlah cicilan.
+  </div>
+</div>
+
+<!-- BAB 8: TROUBLESHOOTING -->
+<div class="page">
+  <h1>Bab 8 - Troubleshooting</h1>
+
+  <h2>8.1 Masalah Login</h2>
+  <table>
+    <tr><th>Masalah</th><th>Solusi</th></tr>
+    <tr>
+      <td>Tidak bisa login</td>
+      <td>Periksa email dan password. Jika lupa, klik "Lupa Password"</td>
+    </tr>
+    <tr>
+      <td>Akun terkunci</td>
+      <td>Hubungi admin untuk membuka kunci akun</td>
+    </tr>
+    <tr>
+      <td>Halaman login berulang</td>
+      <td>Clear cache browser atau coba browser lain</td>
+    </tr>
+  </table>
+
+  <h2>8.2 Masalah Pembayaran</h2>
+  <table>
+    <tr><th>Masalah</th><th>Solusi</th></tr>
+    <tr>
+      <td>Pembayaran QRIS gagal</td>
+      <td>Coba scan QR code lagi atau pilih metode pembayaran lain</td>
+    </tr>
+    <tr>
+      <td>Bukti pembayaran ditolak</td>
+      <td>Periksa alasan penolakan dan upload bukti baru yang sesuai</td>
+    </tr>
+    <tr>
+      <td>Status pembayaran tidak berubah</td>
+      <td>Tunggu beberapa menit atau refresh halaman</td>
+    </tr>
+    <tr>
+      <td>Tidak ada metode pembayaran</td>
+      <td>Hubungi admin untuk mengaktifkan metode pembayaran</td>
+    </tr>
+  </table>
+
+  <h2>8.3 Masalah Upload Bukti</h2>
+  <table>
+    <tr><th>Masalah</th><th>Solusi</th></tr>
+    <tr>
+      <td>Upload gagal</td>
+      <td>Periksa ukuran file (maks 5MB) dan format (JPG, PNG, PDF)</td>
+    </tr>
+    <tr>
+      <td>Bukti blur/tidak jelas</td>
+      <td>Ambil foto baru dengan pencahayaan yang baik</td>
+    </tr>
+    <tr>
+      <td>Tidak bisa memilih file</td>
+      <td>Periksa izin browser untuk mengakses file</td>
+    </tr>
+  </table>
+
+  <h2>8.4 Masalah Lainnya</h2>
+  <table>
+    <tr><th>Masalah</th><th>Solusi</th></tr>
+    <tr>
+      <td>Halaman tidak loading</td>
+      <td>Refresh halaman (F5) atau clear cache browser</td>
+    </tr>
+    <tr>
+      <td>Data tidak muncul</td>
+      <td>Periksa koneksi internet dan refresh halaman</td>
+    </tr>
+    <tr>
+      <td>Tidak menerima notifikasi</td>
+      <td>Periksa folder spam di email atau hubungi admin</td>
+    </tr>
+  </table>
+
+  <div class="warning">
+    <strong>Masalah belum teratasi?</strong> Hubungi admin sekolah atau kirim email ke support@sdperadaban.sch.id
+  </div>
+</div>
+
+<!-- BAB 9: FAQ -->
+<div class="page">
+  <h1>Bab 9 - Frequently Asked Questions (FAQ)</h1>
+
+  <h2>9.1 Pertanyaan Umum</h2>
+
+  <h3>Q: Bagaimana cara mendaftar sebagai orang tua?</h3>
+  <p><strong>A:</strong> Hubungi admin sekolah untuk mendaftarkan anak Anda. Admin akan membuat akun dan memberikan login credentials.</p>
+
+  <h3>Q: Apakah pembayaran online aman?</h3>
+  <p><strong>A:</strong> Ya, sistem menggunakan enkripsi SSL dan terintegrasi dengan payment gateway yang terpercaya. Semua transaksi dicatat dalam audit trail.</p>
+
+  <h3>Q: Berapa lama verifikasi bukti pembayaran?</h3>
+  <p><strong>A:</strong> Maksimal 1x24 jam kerja. Admin/bendahara akan memverifikasi dan mengirim notifikasi.</p>
+
+  <h3>Q: Apakah saya bisa bayar cicilan lebih dari satu sekaligus?</h3>
+  <p><strong>A:</strong> Ya, Anda bisa membayar lebih dari satu cicilan dalam satu transaksi. Sistem akan otomatis menandai cicilan yang sesuai.</p>
+
+  <h3>Q: Bagaimana jika saya transfer dengan nominal yang salah?</h3>
+  <p><strong>A:</strong> Hubungi admin sekolah segera untuk konfirmasi. Verifikasi mungkin ditolak jika nominal tidak sesuai.</p>
+
+  <h3>Q: Apakah ada biaya tambahan untuk menggunakan aplikasi?</h3>
+  <p><strong>A:</strong> Tidak, aplikasi ini disediakan gratis oleh sekolah. Hanya biaya admin bank yang mungkin berlaku untuk metode pembayaran tertentu.</p>
+
+  <h3>Q: Bisakah saya melihat kuitansi pembayaran lama?</h3>
+  <p><strong>A:</strong> Ya, buka menu "Pembayaran" dan klik pada pembayaran yang ingin dilihat kuitansinya.</p>
+
+  <h3>Q: Bagaimana cara mengubah data profil?</h3>
+  <p><strong>A:</strong> Klik menu "Profil" dan pilih "Edit Profil". Ubah data yang diperlukan dan klik "Simpan".</p>
+
+  <h3>Q: Apakah aplikasi bisa diakses di HP?</h3>
+  <p><strong>A:</strong> Ya, aplikasi responsif dan bisa diakses di smartphone, tablet, maupun komputer.</p>
+
+  <h3>Q: Bagaimana jika ada masalah dengan aplikasi?</h3>
+  <p><strong>A:</strong> Hubungi admin sekolah atau kirim email ke support@sdperadaban.sch.id dengan screenshot masalah yang terjadi.</p>
+
+  <h2>9.2 Kontak Support</h2>
+  <table>
+    <tr><th>Kontak</th><th>Informasi</th></tr>
+    <tr><td>Email</td><td>support@sdperadaban.sch.id</td></tr>
+    <tr><td>Telepon</td><td>(021) 1234-5678</td></tr>
+    <tr><td>Jam Operasional</td><td>Senin - Jumat, 08:00 - 15:00 WIB</td></tr>
+    <tr><td>Alamat</td><td>Sekolah Dasar Peradaban</td></tr>
+  </table>
+</div>
+
+<!-- PENUTUP -->
+<div class="page">
+  <h1>📝 Penutup</h1>
+
+  <p>Buku panduan ini dibuat untuk membantu seluruh pengguna Sistem Pembayaran Online (SPO) SD Peradaban dalam menggunakan aplikasi dengan efektif dan efisien.</p>
+
+  <h2>Kesimpulan</h2>
+  <p>Aplikasi SPO SD Peradaban memudahkan:</p>
+  <ul>
+    <li><strong>Admin</strong> dalam mengelola seluruh sistem pembayaran</li>
+    <li><strong>Bendahara</strong> dalam memverifikasi dan memproses pembayaran</li>
+    <li><strong>Orang Tua</strong> dalam membayar tagihan sekolah secara online</li>
+  </ul>
+
+  <h2>Tips Penggunaan</h2>
+  <ul>
+    <li>Selalu periksa tagihan secara berkala</li>
+    <li>Upload bukti pembayaran segera setelah transfer</li>
+    <li>Simpan kuitansi pembayaran untuk arsip</li>
+    <li>Gunakan notifikasi untuk tracking pembayaran</li>
+    <li>Hubungi admin jika ada kendala</li>
+  </ul>
+
+  <h2>Pengembangan Selanjutnya</h2>
+  <p>Fitur yang akan ditambahkan di masa depan:</p>
+  <ul>
+    <li>Aplikasi mobile (Android/iOS)</li>
+    <li>Notifikasi WhatsApp</li>
+    <li>Integrasi dengan payment gateway lain</li>
+    <li>Laporan keuangan yang lebih detail</li>
+    <li>Dukungan multi-bahasa</li>
+  </ul>
+
+  <div class="info" style="text-align: center; margin-top: 50px;">
+    <p><strong>Terima kasih telah menggunakan SPO SD Peradaban!</strong></p>
+    <p style="margin-top: 10px;">© 2026 SD Peradaban. All rights reserved.</p>
+  </div>
+</div>
+
+</body>
+</html>
