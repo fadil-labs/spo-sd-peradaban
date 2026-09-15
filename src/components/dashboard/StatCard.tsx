@@ -60,19 +60,19 @@ export function StatCard({
 
   return (
     <div
-      className={`rounded-[20px] border border-[#E5E0D8] bg-white p-4 sm:p-5 shadow-[0_2px_10px_rgba(0,0,0,0.02)] transition-all hover:shadow-md h-full flex flex-col justify-between ${
+      className={`rounded-[20px] border border-[#E5E0D8] bg-white p-4 sm:p-5 shadow-[0_2px_10px_rgba(0,0,0,0.02)] transition-all hover:shadow-md h-full flex flex-col justify-between overflow-hidden ${
         accent ? "border-l-4 border-l-[#0C3B2E]" : ""
       }`}
     >
       {/* Baris Atas: Icon & Sparkline / Trend */}
-      <div className="flex items-start justify-between mb-3">
-        <div className={`p-2.5 rounded-xl ${style.bgIcon}`}>
+      <div className="flex items-start justify-between mb-3 gap-2">
+        <div className={`p-2.5 rounded-xl shrink-0 ${style.bgIcon}`}>
           <IconComponent className="h-5 w-5 stroke-[2.2]" />
         </div>
 
         <div className="flex items-center gap-2">
           {/* Sparkline Graphic Mini */}
-          <svg className="w-12 h-6" viewBox="0 0 50 20" fill="none">
+          <svg className="w-12 h-6 hidden sm:block" viewBox="0 0 50 20" fill="none">
             <path
               d={
                 trend?.positive ?? true
@@ -88,7 +88,7 @@ export function StatCard({
 
           {trend && (
             <span
-              className={`text-xs font-bold flex items-center gap-0.5 ${style.trendText}`}
+              className={`text-xs font-bold flex items-center gap-0.5 shrink-0 ${style.trendText}`}
             >
               {trend.positive ? "↗" : "↘"} {trend.value}
             </span>
@@ -96,14 +96,14 @@ export function StatCard({
         </div>
       </div>
 
-      {/* Baris Bawah: Titile, Value, Subtitle */}
-      <div>
-        <p className="text-xs font-medium text-[#7A7A7A] mb-0.5">{title}</p>
-        <h3 className="text-xl sm:text-2xl font-extrabold text-[#1A1A1A] tracking-tight">
+      {/* Baris Bawah: Title, Value, Subtitle dengan class text responsif & truncate */}
+      <div className="w-full overflow-hidden">
+        <p className="text-xs font-medium text-[#7A7A7A] mb-0.5 truncate">{title}</p>
+        <h3 className="text-lg sm:text-xl xl:text-2xl font-extrabold text-[#1A1A1A] tracking-tight truncate" title={value}>
           {value}
         </h3>
         {subtitle && (
-          <p className="text-[11px] font-medium text-[#A0A0A0] mt-1">
+          <p className="text-[11px] font-medium text-[#A0A0A0] mt-1 truncate">
             {subtitle}
           </p>
         )}

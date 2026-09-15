@@ -544,24 +544,60 @@ export async function getFinancialReportFiltersAction() {
     redirect("/dashboard/admin");
   }
 
-  const [academicYearsResult, categoriesResult, classesResult, methodsResult] = await Promise.all([
+  const [academicYearsResult, categoriesResult, classesResult, schoolMethodsResult, globalMethodsResult] = await Promise.all([
     supabase.from("academic_years").select("id, name").eq("school_id", profile.school_id).order("name", { ascending: true }),
     supabase.from("payment_categories").select("id, name").eq("school_id", profile.school_id).order("name", { ascending: true }),
     supabase.from("classes").select("id, name").eq("school_id", profile.school_id).order("name", { ascending: true }),
-    supabase.from("school_payment_methods").select("id, name, method_type, is_active").eq("school_id", profile.school_id).eq("is_active", true).order("name", { ascending: true }),
+    supabase
+      .from("school_payment_methods")
+      .select("id, payment_methods (id, name, method_type)")
+      .eq("school_id", profile.school_id)
+      .eq("is_active", true),
+    supabase
+      .from("payment_methods")
+      .select("id, name, method_type")
+      .eq("is_active", true)
+      .order("name", { ascending: true }),
   ]);
 
   const academicYears = academicYearsResult.data || [];
   const categories = categoriesResult.data || [];
   const classes = classesResult.data || [];
-  const paymentMethods = (methodsResult.data || []).map((m: unknown) => {
-    const method = m as Record<string, unknown>;
-    return {
-      id: method.id as string,
-      name: method.name as string,
-      method_type: method.method_type as string,
-    };
-  });
+
+  let rawMethods: { id: string; name: string; method_type: string }[] = [];
+
+  // 1. Ambil dari relasi school_payment_methods
+  if (schoolMethodsResult.data && schoolMethodsResult.data.length > 0) {
+    rawMethods = schoolMethodsResult.data
+      .map((item: any) => {
+        const pm = Array.isArray(item.payment_methods) ? item.payment_methods[0] : item.payment_methods;
+        return pm ? { 
+          id: pm.id, 
+          name: pm.name, 
+          method_type: pm.method_type || "manual" 
+        } : null;
+      })
+      .filter(Boolean) as { id: string; name: string; method_type: string }[];
+  }
+
+  // 2. Fallback ke global payment_methods jika school_payment_methods kosong
+  if (rawMethods.length === 0 && globalMethodsResult.data) {
+    rawMethods = globalMethodsResult.data.map((m: any) => ({
+      id: m.id,
+      name: m.name,
+      method_type: m.method_type || "manual",
+    }));
+  }
+
+  // 3. DEDUPLIKASI: Hilangkan duplikat berdasarkan ID atau Nama Metode Pembayaran
+  const uniqueMethodsMap = new Map<string, { id: string; name: string; method_type: string }>();
+  for (const method of rawMethods) {
+    if (!uniqueMethodsMap.has(method.id)) {
+      uniqueMethodsMap.set(method.id, method);
+    }
+  }
+
+  const paymentMethods = Array.from(uniqueMethodsMap.values());
 
   return {
     academicYears,

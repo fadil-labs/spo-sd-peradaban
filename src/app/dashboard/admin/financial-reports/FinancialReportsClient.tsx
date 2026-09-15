@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Download, Filter, RotateCcw, Search } from "lucide-react";
+import { Download, Filter, RotateCcw, Search, Printer } from "lucide-react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { getFinancialSummaryAction, getFinancialTransactionsAction, FinancialReportFilters, FinancialSummary, TransactionRow } from "./actions";
 import { DataTable } from "@/components/operational/data-table";
@@ -244,23 +244,44 @@ export default function FinancialReportsClient({ summary, transactions, filters:
             Rekonsiliasi tagihan, pembayaran, dan bukti transfer sekolah.
           </p>
         </div>
-        <button
-          onClick={handleExport}
-          disabled={isExporting}
-          className="px-4 py-2.5 bg-[#0C3B2E] text-white text-xs font-bold rounded-xl hover:bg-[#10523E] transition-all shadow-sm disabled:opacity-50 inline-flex items-center gap-2"
-        >
-          {isExporting ? (
-            <>
-              <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-              <span>Mengekspor...</span>
-            </>
-          ) : (
-            <>
-              <Download className="h-4 w-4" />
-              <span>Export CSV</span>
-            </>
-          )}
-        </button>
+
+        {/* CONTAINER TOMBOL AKSI (Cetak & Export) */}
+        <div className="flex items-center gap-2">
+          {/* Tombol Cetak Laporan (Baru) */}
+          <button
+            type="button"
+            onClick={() => {
+              const queryParams = new URLSearchParams();
+              Object.entries(filtersState).forEach(([key, val]) => {
+                if (val && val !== "all") queryParams.append(key, String(val));
+              });
+              window.open(`/dashboard/admin/financial-reports/print?${queryParams.toString()}`, "_blank");
+            }}
+            className="px-4 py-2.5 bg-white border border-[#E5E0D8] text-[#1A1A1A] text-xs font-bold rounded-xl hover:bg-gray-50 transition-all shadow-sm inline-flex items-center gap-2"
+          >
+            <Printer className="h-4 w-4 text-[#0C3B2E]" />
+            <span>Cetak Laporan</span>
+          </button>
+
+          {/* Tombol Export CSV (Asli) */}
+          <button
+            onClick={handleExport}
+            disabled={isExporting}
+            className="px-4 py-2.5 bg-[#0C3B2E] text-white text-xs font-bold rounded-xl hover:bg-[#10523E] transition-all shadow-sm disabled:opacity-50 inline-flex items-center gap-2"
+          >
+            {isExporting ? (
+              <>
+                <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                <span>Mengekspor...</span>
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4" />
+                <span>Export CSV</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -271,44 +292,44 @@ export default function FinancialReportsClient({ summary, transactions, filters:
 
       {/* METRICS SUMMARY CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="bg-white p-4 sm:p-5 rounded-[20px] border border-[#E5E0D8] shadow-sm">
-          <span className="text-[11px] font-bold text-[#7A7A7A] uppercase">Total Tagihan</span>
-          <p className="text-xl sm:text-2xl font-extrabold text-[#1A1A1A] mt-1">
+        <div className="bg-white p-4 sm:p-5 rounded-[20px] border border-[#E5E0D8] shadow-sm overflow-hidden flex flex-col justify-between">
+          <span className="text-[11px] font-bold text-[#7A7A7A] uppercase truncate">Total Tagihan</span>
+          <p className="text-lg sm:text-xl lg:text-2xl font-extrabold text-[#1A1A1A] mt-1 tracking-tight truncate" title={formatCurrency(reportSummary.totalBillAmount)}>
             {formatCurrency(reportSummary.totalBillAmount)}
           </p>
-          <p className="text-[11px] text-[#7A7A7A] mt-0.5">{reportSummary.totalBills} total tagihan</p>
+          <p className="text-[11px] text-[#7A7A7A] mt-0.5 truncate">{reportSummary.totalBills} total tagihan</p>
         </div>
 
-        <div className="bg-white p-4 sm:p-5 rounded-[20px] border border-[#E5E0D8] shadow-sm">
-          <span className="text-[11px] font-bold text-[#7A7A7A] uppercase">Total Terbayar</span>
-          <p className="text-xl sm:text-2xl font-extrabold text-[#0C3B2E] mt-1">
+        <div className="bg-white p-4 sm:p-5 rounded-[20px] border border-[#E5E0D8] shadow-sm overflow-hidden flex flex-col justify-between">
+          <span className="text-[11px] font-bold text-[#7A7A7A] uppercase truncate">Total Terbayar</span>
+          <p className="text-lg sm:text-xl lg:text-2xl font-extrabold text-[#0C3B2E] mt-1 tracking-tight truncate" title={formatCurrency(reportSummary.totalPaid)}>
             {formatCurrency(reportSummary.totalPaid)}
           </p>
-          <p className="text-[11px] text-[#7A7A7A] mt-0.5">Termasuk transaksi sukses</p>
+          <p className="text-[11px] text-[#7A7A7A] mt-0.5 truncate">Termasuk transaksi sukses</p>
         </div>
 
-        <div className="bg-white p-4 sm:p-5 rounded-[20px] border border-[#E5E0D8] shadow-sm">
-          <span className="text-[11px] font-bold text-[#7A7A7A] uppercase">Pembayaran Pending</span>
-          <p className="text-xl sm:text-2xl font-extrabold text-[#C28E38] mt-1">
+        <div className="bg-white p-4 sm:p-5 rounded-[20px] border border-[#E5E0D8] shadow-sm overflow-hidden flex flex-col justify-between">
+          <span className="text-[11px] font-bold text-[#7A7A7A] uppercase truncate">Pembayaran Pending</span>
+          <p className="text-lg sm:text-xl lg:text-2xl font-extrabold text-[#C28E38] mt-1 tracking-tight truncate" title={formatCurrency(reportSummary.pendingPaymentAmount)}>
             {formatCurrency(reportSummary.pendingPaymentAmount)}
           </p>
-          <p className="text-[11px] text-[#7A7A7A] mt-0.5">{reportSummary.pendingPaymentCount} transaksi pending</p>
+          <p className="text-[11px] text-[#7A7A7A] mt-0.5 truncate">{reportSummary.pendingPaymentCount} transaksi pending</p>
         </div>
 
-        <div className="bg-white p-4 sm:p-5 rounded-[20px] border border-[#E5E0D8] shadow-sm">
-          <span className="text-[11px] font-bold text-[#7A7A7A] uppercase">Outstanding</span>
-          <p className="text-xl sm:text-2xl font-extrabold text-[#A83A32] mt-1">
+        <div className="bg-white p-4 sm:p-5 rounded-[20px] border border-[#E5E0D8] shadow-sm overflow-hidden flex flex-col justify-between">
+          <span className="text-[11px] font-bold text-[#7A7A7A] uppercase truncate">Outstanding</span>
+          <p className="text-lg sm:text-xl lg:text-2xl font-extrabold text-[#A83A32] mt-1 tracking-tight truncate" title={formatCurrency(reportSummary.totalOutstanding)}>
             {formatCurrency(reportSummary.totalOutstanding)}
           </p>
-          <p className="text-[11px] text-[#7A7A7A] mt-0.5">Sisa tunggakan</p>
+          <p className="text-[11px] text-[#7A7A7A] mt-0.5 truncate">Sisa tunggakan</p>
         </div>
 
-        <div className="bg-white p-4 sm:p-5 rounded-[20px] border border-[#E5E0D8] shadow-sm">
-          <span className="text-[11px] font-bold text-[#7A7A7A] uppercase">Tagihan Lunas</span>
-          <p className="text-xl sm:text-2xl font-extrabold text-[#1A1A1A] mt-1">
+        <div className="bg-white p-4 sm:p-5 rounded-[20px] border border-[#E5E0D8] shadow-sm overflow-hidden flex flex-col justify-between">
+          <span className="text-[11px] font-bold text-[#7A7A7A] uppercase truncate">Tagihan Lunas</span>
+          <p className="text-lg sm:text-xl lg:text-2xl font-extrabold text-[#1A1A1A] mt-1 tracking-tight truncate">
             {reportSummary.paidBillsCount}
           </p>
-          <p className="text-[11px] text-[#7A7A7A] mt-0.5">
+          <p className="text-[11px] text-[#7A7A7A] mt-0.5 truncate">
             {reportSummary.partialBillsCount} cicilan / {reportSummary.overdueBillsCount} overdue
           </p>
         </div>
