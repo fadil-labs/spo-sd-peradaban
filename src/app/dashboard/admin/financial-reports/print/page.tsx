@@ -61,12 +61,12 @@ export default async function FinancialReportPrintPage({
       school={school}
       profileName={profile.full_name || "Administrator"}
       summary={{
-        totalBills: summaryResult.totalBills,
-        totalBillAmount: summaryResult.totalBillAmount,
-        totalPaid: summaryResult.totalPaid,
-        totalOutstanding: summaryResult.totalOutstanding,
-        pendingPaymentAmount: summaryResult.pendingPaymentAmount,
-        pendingPaymentCount: summaryResult.pendingPaymentCount,
+        totalBills: summary.totalBills,
+        totalBillAmount: summary.totalBillAmount,
+        totalPaid: summary.totalPaid,
+        totalOutstanding: summary.totalOutstanding,
+        pendingPaymentAmount: summary.pendingPaymentAmount,
+        pendingPaymentCount: summary.pendingPaymentCount,
       }}
       rows={rows}
       filters={{
